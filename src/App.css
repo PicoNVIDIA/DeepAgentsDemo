@@ -56,6 +56,19 @@
   display: flex;
   flex: 1;
   overflow: hidden;
+  position: relative;
+}
+
+.builder-view {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.chat-view {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
 }
 
 .app-main {

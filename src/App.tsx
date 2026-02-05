@@ -1,13 +1,14 @@
 import { useState, useCallback } from 'react';
 import { DndContext, DragOverlay } from '@dnd-kit/core';
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { skills as allSkills, type Skill } from './data/skills';
 import { SkillPalette } from './components/SkillPalette';
 import { AgentBuilder } from './components/AgentBuilder';
 import { BuildButton } from './components/BuildButton';
 import { BuildAnimation } from './components/BuildAnimation';
 import { ParticleBackground } from './components/ParticleBackground';
+import { ChatSection } from './components/ChatSection';
 import { SkillCard } from './components/SkillCard';
 import './App.css';
 
@@ -44,11 +45,7 @@ function App() {
   }, []);
 
   const handleBuild = useCallback(() => {
-    if (isReady) {
-      // Reset everything
-      setAddedSkills([]);
-      setIsReady(false);
-    } else if (addedSkills.length > 0) {
+    if (addedSkills.length > 0 && !isReady) {
       setIsBuilding(true);
     }
   }, [addedSkills.length, isReady]);
@@ -56,6 +53,12 @@ function App() {
   const handleBuildComplete = useCallback(() => {
     setIsBuilding(false);
     setIsReady(true);
+  }, []);
+
+  const handleReset = useCallback(() => {
+    setAddedSkills([]);
+    setIsReady(false);
+    setIsBuilding(false);
   }, []);
 
   const addedSkillIds = addedSkills.map(s => s.id);
@@ -84,24 +87,50 @@ function App() {
 
         {/* Main content */}
         <div className="app-content">
-          <SkillPalette addedSkillIds={addedSkillIds} />
-          
-          <div className="app-main">
-            <AgentBuilder 
-              skills={addedSkills}
-              isBuilding={isBuilding}
-              isReady={isReady}
-              onRemoveSkill={handleRemoveSkill}
-            />
-            
-            <BuildButton
-              disabled={addedSkills.length === 0}
-              isBuilding={isBuilding}
-              isReady={isReady}
-              onClick={handleBuild}
-              skillCount={addedSkills.length}
-            />
-          </div>
+          <AnimatePresence mode="wait">
+            {!isReady ? (
+              <motion.div
+                key="builder"
+                className="builder-view"
+                initial={{ opacity: 1 }}
+                exit={{ opacity: 0, x: -50 }}
+                transition={{ duration: 0.3 }}
+              >
+                <SkillPalette addedSkillIds={addedSkillIds} />
+                
+                <div className="app-main">
+                  <AgentBuilder 
+                    skills={addedSkills}
+                    isBuilding={isBuilding}
+                    isReady={isReady}
+                    onRemoveSkill={handleRemoveSkill}
+                  />
+                  
+                  <BuildButton
+                    disabled={addedSkills.length === 0}
+                    isBuilding={isBuilding}
+                    isReady={isReady}
+                    onClick={handleBuild}
+                    skillCount={addedSkills.length}
+                  />
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="chat"
+                className="chat-view"
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4, delay: 0.2 }}
+              >
+                <ChatSection 
+                  isVisible={isReady}
+                  skills={addedSkills}
+                  onReset={handleReset}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Build animation overlay */}
