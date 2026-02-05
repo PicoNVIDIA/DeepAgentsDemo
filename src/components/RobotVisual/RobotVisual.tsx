@@ -308,17 +308,15 @@ export function RobotVisual({ skills, isBuilding, isReady }: RobotVisualProps) {
         <AnimatePresence>
           {skills.slice(0, 8).map((skill, index) => {
             const angle = (index / Math.min(skills.length, 8)) * Math.PI * 2 - Math.PI / 2;
-            const radius = 140;
-            const x = Math.cos(angle) * radius;
-            const y = Math.sin(angle) * radius;
+            const radius = 160;
+            const xPos = Math.cos(angle) * radius;
+            const yPos = Math.sin(angle) * radius;
             
             return (
               <motion.div
                 key={skill.id}
                 className="robot-skill-badge"
-                style={{
-                  transform: `translate(${x}px, ${y}px)`,
-                }}
+                style={{ x: xPos, y: yPos }}
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0, opacity: 0 }}
