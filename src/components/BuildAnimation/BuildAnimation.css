@@ -1,0 +1,90 @@
+.build-animation-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: var(--z-modal);
+  pointer-events: none;
+}
+
+.energy-lines {
+  position: absolute;
+  width: 400px;
+  height: 400px;
+}
+
+.energy-line {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 2px;
+  height: 200px;
+  background: linear-gradient(
+    to top,
+    var(--nvidia-green) 0%,
+    transparent 100%
+  );
+  transform-origin: bottom center;
+  box-shadow: 0 0 10px var(--nvidia-green);
+}
+
+.central-burst {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  background: radial-gradient(
+    circle,
+    var(--nvidia-green) 0%,
+    rgba(118, 185, 0, 0.5) 30%,
+    transparent 70%
+  );
+  border-radius: 50%;
+}
+
+.particle-explosion {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.explosion-particle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--nvidia-green);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--nvidia-green), 0 0 20px var(--nvidia-green);
+}
+
+.screen-flash {
+  position: fixed;
+  inset: 0;
+  background: var(--nvidia-green);
+  pointer-events: none;
+}
+
+.progress-ring {
+  position: absolute;
+  width: 150px;
+  height: 150px;
+}
+
+.progress-ring-bg {
+  stroke: var(--n700);
+}
+
+.progress-ring-fill {
+  stroke: var(--nvidia-green);
+  filter: drop-shadow(0 0 10px var(--nvidia-green));
+}
+
+.build-status {
+  position: absolute;
+  bottom: 30%;
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--nvidia-green);
+  text-shadow: 0 0 20px var(--nvidia-green-glow);
+}
