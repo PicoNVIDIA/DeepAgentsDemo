@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useRef, useMemo, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Skill } from '../../data/skills';
 import type { ToolCall } from './ToolCallsPanel';
@@ -20,14 +20,31 @@ export function ToolWebView({ skills, toolCalls, activeToolId }: ToolWebViewProp
   const animFrameRef = useRef<number>();
   const pulsePhaseRef = useRef(0);
   const shakeRef = useRef({ x: 0, y: 0, intensity: 0 });
+  const [size, setSize] = useState({ w: 340, h: 400 });
 
-  // Calculate node positions in a circular layout around the robot
+  // Dynamically measure the container
+  const updateSize = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    setSize({ w: rect.width, h: rect.height });
+  }, []);
+
+  useEffect(() => {
+    updateSize();
+    const obs = new ResizeObserver(updateSize);
+    if (containerRef.current) obs.observe(containerRef.current);
+    return () => obs.disconnect();
+  }, [updateSize]);
+
+  // Center point derived from measured size
+  const cx = size.w / 2;
+  const cy = size.h / 2;
+  const radius = Math.min(size.w, size.h) * 0.36;
+
+  // Calculate node positions in a circular layout around the center
   const nodePositions = useMemo((): Map<string, NodePosition> => {
     const map = new Map<string, NodePosition>();
-    const cx = 170;
-    const cy = 160;
-    const radius = 120;
-    
     skills.forEach((skill, i) => {
       const angle = (i / skills.length) * Math.PI * 2 - Math.PI / 2;
       map.set(skill.id, {
@@ -35,9 +52,8 @@ export function ToolWebView({ skills, toolCalls, activeToolId }: ToolWebViewProp
         y: cy + Math.sin(angle) * radius,
       });
     });
-    
     return map;
-  }, [skills]);
+  }, [skills, cx, cy, radius]);
 
   // Track which tools have been called
   const calledToolIds = useMemo(() => {
@@ -65,9 +81,6 @@ export function ToolWebView({ skills, toolCalls, activeToolId }: ToolWebViewProp
       canvas.height = rect.height;
     };
     resize();
-
-    const cx = 170;
-    const cy = 160;
 
     // Particles for active connections
     const particles: Array<{
@@ -97,7 +110,6 @@ export function ToolWebView({ skills, toolCalls, activeToolId }: ToolWebViewProp
         const isActive = activeToolId === skill.id;
         const isCalled = calledToolIds.has(skill.id);
 
-        // Connection line
         ctx.beginPath();
         ctx.moveTo(cx + shakeRef.current.x, cy + shakeRef.current.y);
         ctx.lineTo(pos.x, pos.y);
@@ -170,14 +182,17 @@ export function ToolWebView({ skills, toolCalls, activeToolId }: ToolWebViewProp
 
     draw();
 
-    const resizeObs = new ResizeObserver(resize);
+    const resizeObs = new ResizeObserver(() => {
+      resize();
+      updateSize();
+    });
     resizeObs.observe(container);
 
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
       resizeObs.disconnect();
     };
-  }, [skills, nodePositions, activeToolId, calledToolIds]);
+  }, [skills, nodePositions, activeToolId, calledToolIds, cx, cy, updateSize]);
 
   // Trigger shake when activeToolId changes
   useEffect(() => {
@@ -185,9 +200,6 @@ export function ToolWebView({ skills, toolCalls, activeToolId }: ToolWebViewProp
       shakeRef.current.intensity = 8;
     }
   }, [activeToolId]);
-
-  const cx = 170;
-  const cy = 160;
 
   return (
     <div className="tool-web-view" ref={containerRef}>
