@@ -206,10 +206,10 @@ export function ToolWebView({ skills, toolCalls, activeToolId }: ToolWebViewProp
       {/* Canvas for lines and particles */}
       <canvas ref={canvasRef} className="web-canvas" />
 
-      {/* Robot node (center) */}
+      {/* Robot node (center) — 52px is the node size, offset by half */}
       <motion.div
         className={`web-robot-node ${activeToolId ? 'active' : ''}`}
-        style={{ left: cx, top: cy }}
+        style={{ left: cx - 26, top: cy - 26 }}
         animate={activeToolId ? {
           x: [0, -3, 3, -2, 2, 0],
           y: [0, 2, -2, 1, -1, 0],
@@ -243,11 +243,12 @@ export function ToolWebView({ skills, toolCalls, activeToolId }: ToolWebViewProp
           const isCalled = calledToolIds.has(skill.id);
           const callCount = toolCalls.filter(t => t.skillId === skill.id && t.status === 'success').length;
 
+          {/* 38px is the skill node size, offset by half; +10 for label below */}
           return (
             <motion.div
               key={skill.id}
               className={`web-skill-node ${isActive ? 'active' : ''} ${isCalled ? 'called' : ''}`}
-              style={{ left: pos.x, top: pos.y }}
+              style={{ left: pos.x - 19, top: pos.y - 19 }}
               initial={{ scale: 0, opacity: 0 }}
               animate={{
                 scale: isActive ? 1.2 : 1,
@@ -257,26 +258,25 @@ export function ToolWebView({ skills, toolCalls, activeToolId }: ToolWebViewProp
                 scale: { type: 'spring', stiffness: 400, damping: 15 },
               }}
             >
-              {/* Glow ring for active */}
-              {isActive && (
-                <>
-                  <motion.div
-                    className="node-glow-ring"
-                    initial={{ scale: 1, opacity: 0.5 }}
-                    animate={{ scale: 2.5, opacity: 0 }}
-                    transition={{ duration: 0.8, repeat: Infinity }}
-                  />
-                  <motion.div
-                    className="node-glow-ring delay"
-                    initial={{ scale: 1, opacity: 0.3 }}
-                    animate={{ scale: 2, opacity: 0 }}
-                    transition={{ duration: 0.8, repeat: Infinity, delay: 0.3 }}
-                  />
-                </>
-              )}
-
               <div className="skill-node-inner">
                 <span className="skill-node-icon">{skill.icon}</span>
+                {/* Glow rings for active — inside inner so inset:0 works */}
+                {isActive && (
+                  <>
+                    <motion.div
+                      className="node-glow-ring"
+                      initial={{ scale: 1, opacity: 0.5 }}
+                      animate={{ scale: 2.5, opacity: 0 }}
+                      transition={{ duration: 0.8, repeat: Infinity }}
+                    />
+                    <motion.div
+                      className="node-glow-ring delay"
+                      initial={{ scale: 1, opacity: 0.3 }}
+                      animate={{ scale: 2, opacity: 0 }}
+                      transition={{ duration: 0.8, repeat: Infinity, delay: 0.3 }}
+                    />
+                  </>
+                )}
               </div>
               <span className="skill-node-label">{skill.name}</span>
               {callCount > 0 && (

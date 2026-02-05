@@ -114,7 +114,6 @@
 /* Robot center node */
 .web-robot-node {
   position: absolute;
-  transform: translate(-50%, -50%);
   z-index: 10;
 }
 
@@ -152,7 +151,6 @@
 /* Skill nodes */
 .web-skill-node {
   position: absolute;
-  transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -161,6 +159,7 @@
 }
 
 .skill-node-inner {
+  position: relative;
   width: 38px;
   height: 38px;
   display: flex;
@@ -219,14 +218,10 @@
 
 .node-glow-ring {
   position: absolute;
-  width: 38px;
-  height: 38px;
+  inset: 0;
   border: 2px solid var(--nvidia-green);
   border-radius: 50%;
   pointer-events: none;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
 }
 
 .node-glow-ring.delay {
