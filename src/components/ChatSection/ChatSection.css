@@ -305,6 +305,23 @@
   text-align: center;
 }
 
+/* Streaming cursor */
+.message-text.streaming {
+  position: relative;
+}
+
+.cursor-blink {
+  display: inline;
+  color: var(--nvidia-green);
+  animation: blink-cursor 0.8s step-end infinite;
+  font-weight: normal;
+}
+
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
 /* Responsive */
 @media (max-width: 900px) {
   .chat-main-area {

@@ -1,0 +1,8 @@
+deepagents
+fastapi
+uvicorn[standard]
+sse-starlette
+tavily-python
+langchain-nvidia-ai-endpoints
+langchain-community
+python-dotenv
