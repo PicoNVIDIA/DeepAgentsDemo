@@ -82,16 +82,22 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
     setStreamingContent('');
 
     let fullContent = '';
+    let rawContent = ''; // includes <think> blocks
 
-    // Timeout: abort after 45s
+    // Timeout: abort after 60s
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 45000);
+    const timeout = setTimeout(() => controller.abort(), 60000);
 
     try {
       await sendMessage(sessionId, currentInput, (event) => {
         switch (event.type) {
           case 'token':
-            fullContent += event.content;
+            rawContent += event.content;
+            // Strip <think>...</think> blocks from display
+            fullContent = rawContent
+              .replace(/<think>[\s\S]*?<\/think>/g, '')
+              .replace(/<think>[\s\S]*$/, '') // partial open think block
+              .trim();
             setStreamingContent(fullContent);
             break;
 
@@ -139,7 +145,7 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
       console.error('[Chat] Stream error:', err);
       const errorMsg = err instanceof Error ? err.message : 'Connection failed';
       if (controller.signal.aborted && !fullContent) {
-        fullContent = '⚠️ Request timed out after 45 seconds. The backend may be overloaded — try again.';
+        fullContent = '⚠️ Request timed out after 60 seconds. The backend may be overloaded — try again.';
       } else {
         fullContent = fullContent || `⚠️ Could not reach the agent backend.\n\n${errorMsg}`;
       }

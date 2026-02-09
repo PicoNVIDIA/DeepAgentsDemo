@@ -89,12 +89,19 @@ export async function sendMessage(
 ): Promise<void> {
   console.log('[Agent] Sending to session', sessionId, ':', message);
 
-  const response = await fetch(`/api/agent/${sessionId}/chat`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message }),
-    signal,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`/api/agent/${sessionId}/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message }),
+      signal,
+    });
+  } catch (fetchErr) {
+    console.error('[Agent] Fetch failed:', fetchErr);
+    onEvent({ type: 'error', message: `Connection failed: ${fetchErr}` });
+    return;
+  }
 
   console.log('[Agent] Response:', response.status, response.headers.get('content-type'));
 
@@ -112,16 +119,14 @@ export async function sendMessage(
 
   const decoder = new TextDecoder();
   let buffer = '';
-
   try {
     while (true) {
       const { done, value } = await reader.read();
-      if (done) {
-        console.log('[Agent] Stream ended');
-        break;
-      }
+      if (done) break;
 
-      buffer += decoder.decode(value, { stream: true });
+      const text = decoder.decode(value, { stream: true });
+      // Normalize \r\n to \n (SSE servers may use either)
+      buffer += text.replace(/\r\n/g, '\n');
 
       // Process complete SSE blocks (separated by double newlines)
       let blockEnd: number;

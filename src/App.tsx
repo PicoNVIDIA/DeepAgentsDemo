@@ -73,15 +73,20 @@ function App() {
 
   // When build animation completes, create the agent session
   const handleBuildComplete = useCallback(async () => {
-    if (!selectedModel) return;
+    if (!selectedModel) {
+      console.error('[App] No model selected');
+      return;
+    }
 
     try {
       const skillIds = addedSkills.map(s => s.id);
+      console.log('[App] Creating agent session:', selectedModel.id, skillIds);
       const id = await createAgentSession(selectedModel.id, skillIds);
+      console.log('[App] Session created:', id);
       setSessionId(id);
       setPhase('chat');
     } catch (err) {
-      console.error('Failed to create agent session:', err);
+      console.error('[App] Failed to create agent session:', err);
       // Fall back to chat anyway — sendMessage will show an error
       setPhase('chat');
     }
