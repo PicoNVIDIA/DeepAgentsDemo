@@ -192,11 +192,15 @@ async def _stream_response(session: AgentSession, user_message: str) -> AsyncGen
 
 async def _stream_resume(session: AgentSession, decision: str, edited_args: dict | None) -> AsyncGenerator[dict, None]:
     try:
+        interrupt_data = session.pending_interrupt
         session.pending_interrupt = None
 
-        # Build decision list
-        decisions = [{"type": decision}]
-        if decision == "edit" and edited_args:
+        # Count how many action_requests need a decision
+        num_actions = len(interrupt_data.get("action_requests", [])) if interrupt_data else 1
+
+        # Build decision list — one decision per interrupted tool call
+        decisions = [{"type": decision} for _ in range(num_actions)]
+        if decision == "edit" and edited_args and num_actions == 1:
             decisions = [{"type": "edit", "edited_action": edited_args}]
 
         tool_timers: dict[str, float] = {}
