@@ -2,129 +2,36 @@ export interface Skill {
   id: string;
   name: string;
   description: string;
-  category: 'cuda' | 'ai' | 'tools';
+  category: string;
   icon: string;
-  color?: string;
 }
 
 export const skills: Skill[] = [
-  // CUDA Libraries
-  {
-    id: 'cublas',
-    name: 'cuBLAS',
-    description: 'GPU-accelerated linear algebra',
-    category: 'cuda',
-    icon: '⚡',
-  },
-  {
-    id: 'cuopt',
-    name: 'cuOpt',
-    description: 'Optimization & routing solver',
-    category: 'cuda',
-    icon: '🎯',
-  },
-  {
-    id: 'cuml',
-    name: 'cuML',
-    description: 'Machine learning algorithms',
-    category: 'cuda',
-    icon: '🧠',
-  },
-  {
-    id: 'cudnn',
-    name: 'cuDNN',
-    description: 'Deep neural network primitives',
-    category: 'cuda',
-    icon: '🔮',
-  },
-  {
-    id: 'tensorrt',
-    name: 'TensorRT',
-    description: 'High-performance inference',
-    category: 'cuda',
-    icon: '🚀',
-  },
-  {
-    id: 'cugraph',
-    name: 'cuGraph',
-    description: 'Graph analytics library',
-    category: 'cuda',
-    icon: '🕸️',
-  },
-
-  // AI Capabilities
+  // Real working tools
   {
     id: 'websearch',
     name: 'Web Search',
-    description: 'Real-time internet access',
-    category: 'ai',
+    description: 'Real-time internet search via Tavily',
+    category: 'tools',
     icon: '🌐',
-  },
-  {
-    id: 'codeinterpreter',
-    name: 'Code Interpreter',
-    description: 'Execute & analyze code',
-    category: 'ai',
-    icon: '💻',
-  },
-  {
-    id: 'rag',
-    name: 'RAG',
-    description: 'Retrieval-augmented generation',
-    category: 'ai',
-    icon: '📚',
-  },
-  {
-    id: 'vision',
-    name: 'Vision',
-    description: 'Image understanding',
-    category: 'ai',
-    icon: '👁️',
-  },
-  {
-    id: 'speech',
-    name: 'Speech',
-    description: 'Voice recognition & synthesis',
-    category: 'ai',
-    icon: '🎙️',
-  },
-
-  // Tools
-  {
-    id: 'fileio',
-    name: 'File I/O',
-    description: 'Read and write files',
-    category: 'tools',
-    icon: '📁',
-  },
-  {
-    id: 'api',
-    name: 'API Access',
-    description: 'Connect to external services',
-    category: 'tools',
-    icon: '🔌',
-  },
-  {
-    id: 'database',
-    name: 'Database',
-    description: 'Query structured data',
-    category: 'tools',
-    icon: '🗄️',
   },
 ];
 
+// Coming soon — will be wired to real backends (MCP, skills, etc.)
+export const comingSoonSkills: Array<{ name: string; icon: string; description: string }> = [
+  { name: 'Code Interpreter', icon: '💻', description: 'Execute & analyze code' },
+  { name: 'RAG', icon: '📚', description: 'Retrieval-augmented generation' },
+  { name: 'File I/O', icon: '📁', description: 'Read and write files' },
+  { name: 'API Access', icon: '🔌', description: 'Connect to external services' },
+  { name: 'Database', icon: '🗄️', description: 'Query structured data' },
+  { name: 'Vision', icon: '👁️', description: 'Image understanding' },
+  { name: 'MCP Tools', icon: '🔧', description: 'Model Context Protocol integrations' },
+];
+
 export const skillCategories = {
-  cuda: {
-    name: 'CUDA Libraries',
-    description: 'GPU-accelerated computing',
-  },
-  ai: {
-    name: 'AI Capabilities',
-    description: 'Intelligent features',
-  },
   tools: {
     name: 'Tools',
-    description: 'System integrations',
+    description: 'Agent capabilities',
   },
 } as const;
 

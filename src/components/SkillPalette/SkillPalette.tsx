@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { skills, skillCategories, type SkillCategory } from '../../data/skills';
+import { skills, comingSoonSkills } from '../../data/skills';
 import { SkillCard } from '../SkillCard';
 import './SkillPalette.css';
 
@@ -9,16 +9,6 @@ interface SkillPaletteProps {
 
 export function SkillPalette({ addedSkillIds }: SkillPaletteProps) {
   const availableSkills = skills.filter(skill => !addedSkillIds.includes(skill.id));
-  
-  const groupedSkills = availableSkills.reduce((acc, skill) => {
-    if (!acc[skill.category]) {
-      acc[skill.category] = [];
-    }
-    acc[skill.category].push(skill);
-    return acc;
-  }, {} as Record<SkillCategory, typeof skills>);
-
-  const categories = Object.keys(skillCategories) as SkillCategory[];
 
   return (
     <motion.aside 
@@ -28,52 +18,68 @@ export function SkillPalette({ addedSkillIds }: SkillPaletteProps) {
       transition={{ duration: 0.5, ease: 'easeOut' }}
     >
       <div className="skill-palette-header">
-        <h2 className="skill-palette-title">Skills</h2>
+        <h2 className="skill-palette-title">Tools</h2>
         <p className="skill-palette-subtitle">Drag to add capabilities</p>
       </div>
       
       <div className="skill-palette-content">
-        {categories.map((category, categoryIndex) => {
-          const categorySkills = groupedSkills[category] || [];
-          if (categorySkills.length === 0) return null;
-          
-          return (
-            <motion.div 
-              key={category} 
-              className="skill-category"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: categoryIndex * 0.1 + 0.2 }}
-            >
-              <div className="skill-category-header">
-                <h3 className="skill-category-name">{skillCategories[category].name}</h3>
-                <span className="skill-category-count">{categorySkills.length}</span>
-              </div>
-              <div className="skill-category-list">
-                {categorySkills.map((skill, index) => (
-                  <motion.div
-                    key={skill.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: categoryIndex * 0.1 + index * 0.05 + 0.3 }}
-                  >
-                    <SkillCard skill={skill} isInPalette />
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-          );
-        })}
-        
+        {/* Real working tools */}
+        <motion.div 
+          className="skill-category"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <div className="skill-category-header">
+            <h3 className="skill-category-name">Available</h3>
+            <span className="skill-category-count">{availableSkills.length}</span>
+          </div>
+          <div className="skill-category-list">
+            {availableSkills.map((skill, index) => (
+              <motion.div
+                key={skill.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.05 + 0.3 }}
+              >
+                <SkillCard skill={skill} isInPalette />
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+
         {availableSkills.length === 0 && (
           <motion.div 
             className="skill-palette-empty"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
           >
-            <p>All skills added!</p>
+            <p>All tools added!</p>
           </motion.div>
         )}
+
+        {/* Coming soon section */}
+        <motion.div
+          className="skill-category coming-soon"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          <div className="skill-category-header">
+            <h3 className="skill-category-name">Coming Soon</h3>
+          </div>
+          <div className="coming-soon-list">
+            {comingSoonSkills.map((skill) => (
+              <div key={skill.name} className="coming-soon-item">
+                <span className="coming-soon-icon">{skill.icon}</span>
+                <div className="coming-soon-info">
+                  <span className="coming-soon-name">{skill.name}</span>
+                  <span className="coming-soon-desc">{skill.description}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
       </div>
     </motion.aside>
   );
