@@ -17,10 +17,10 @@ interface ChatSectionProps {
   isVisible: boolean;
   skills: Skill[];
   onReset: () => void;
-  modelId?: string;
+  sessionId: string | null;
 }
 
-export function ChatSection({ isVisible, skills, onReset, modelId }: ChatSectionProps) {
+export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSectionProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -29,7 +29,6 @@ export function ChatSection({ isVisible, skills, onReset, modelId }: ChatSection
   const [streamingContent, setStreamingContent] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const abortRef = useRef<AbortController | null>(null);
 
   // Greeting on first show
   useEffect(() => {
@@ -59,6 +58,16 @@ export function ChatSection({ isVisible, skills, onReset, modelId }: ChatSection
   const handleSend = useCallback(async () => {
     if (!input.trim() || isTyping) return;
 
+    if (!sessionId) {
+      setMessages(prev => [...prev, {
+        id: `error-${Date.now()}`,
+        role: 'agent',
+        content: '⚠️ No agent session found. Please click "Build New Agent" and try again.',
+        timestamp: new Date(),
+      }]);
+      return;
+    }
+
     const userMessage: Message = {
       id: `user-${Date.now()}`,
       role: 'user',
@@ -72,19 +81,14 @@ export function ChatSection({ isVisible, skills, onReset, modelId }: ChatSection
     setIsTyping(true);
     setStreamingContent('');
 
-    // Build history from existing messages (exclude greeting)
-    const history = messages
-      .filter(m => m.id !== 'greeting')
-      .map(m => ({ role: m.role, content: m.content }));
-
-    const skillIds = skills.map(s => s.id);
     let fullContent = '';
 
-    try {
-      console.log('[Chat] Starting stream for:', currentInput);
+    // Timeout: abort after 45s
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 45000);
 
-      await sendMessage(currentInput, skillIds, history, modelId, (event) => {
-        console.log('[Chat] Event:', event.type);
+    try {
+      await sendMessage(sessionId, currentInput, (event) => {
         switch (event.type) {
           case 'token':
             fullContent += event.content;
@@ -130,25 +134,32 @@ export function ChatSection({ isVisible, skills, onReset, modelId }: ChatSection
           case 'done':
             break;
         }
-      });
+      }, controller.signal);
     } catch (err) {
       console.error('[Chat] Stream error:', err);
       const errorMsg = err instanceof Error ? err.message : 'Connection failed';
-      fullContent = fullContent || `⚠️ Could not reach the agent backend.\n\n${errorMsg}\n\nMake sure the backend is running: \`cd backend && python server.py\``;
+      if (controller.signal.aborted && !fullContent) {
+        fullContent = '⚠️ Request timed out after 45 seconds. The backend may be overloaded — try again.';
+      } else {
+        fullContent = fullContent || `⚠️ Could not reach the agent backend.\n\n${errorMsg}`;
+      }
+    } finally {
+      clearTimeout(timeout);
     }
 
     // Finalize the streamed message
-    if (fullContent) {
-      setMessages(prev => [...prev, {
-        id: `agent-${Date.now()}`,
-        role: 'agent',
-        content: fullContent,
-        timestamp: new Date(),
-      }]);
+    if (!fullContent) {
+      fullContent = '⚠️ No response received from the agent. The backend may need to be restarted.';
     }
+    setMessages(prev => [...prev, {
+      id: `agent-${Date.now()}`,
+      role: 'agent',
+      content: fullContent,
+      timestamp: new Date(),
+    }]);
     setStreamingContent('');
     setIsTyping(false);
-  }, [input, isTyping, skills, messages]);
+  }, [input, isTyping, sessionId, skills]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -176,6 +187,7 @@ export function ChatSection({ isVisible, skills, onReset, modelId }: ChatSection
                   <div className="chat-status">
                     <span className="status-dot" />
                     <span>Deep Agent Active</span>
+                    {sessionId && <span className="session-id">#{sessionId}</span>}
                   </div>
                   <div className="chat-skills">
                     {skills.slice(0, 4).map(skill => (
@@ -219,7 +231,7 @@ export function ChatSection({ isVisible, skills, onReset, modelId }: ChatSection
                   </motion.div>
                 ))}
 
-                {/* Streaming content (in-progress agent message) */}
+                {/* Streaming content */}
                 {streamingContent && (
                   <motion.div
                     className="message agent"
@@ -238,7 +250,7 @@ export function ChatSection({ isVisible, skills, onReset, modelId }: ChatSection
                   </motion.div>
                 )}
                 
-                {/* Typing indicator (before first token arrives) */}
+                {/* Typing indicator */}
                 <AnimatePresence>
                   {isTyping && !streamingContent && (
                     <motion.div

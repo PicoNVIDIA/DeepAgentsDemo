@@ -1,6 +1,6 @@
 """
-Deep Agent factory — creates a configured LangGraph agent with tools
-based on the skills the user selected in the UI.
+Agent factory — creates a LangGraph ReAct agent with only the tools
+the user selected. No sub-agents, no file ops, no todos — clean and simple.
 """
 
 import os
@@ -8,16 +8,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from deepagents import create_deep_agent
-from langchain_community.tools.tavily_search import TavilySearchResults
+from langgraph.prebuilt import create_react_agent
 from langchain_nvidia_ai_endpoints import ChatNVIDIA
 
 
-# Map UI model IDs to NVIDIA NIM model strings
+# Map UI model IDs to NVIDIA NIM model strings (verified available)
 MODEL_MAP = {
-    "nemotron": "nvidia/llama-3.1-nemotron-70b-instruct",
+    "nemotron": "nvidia/llama-3.3-nemotron-super-49b-v1.5",
     "llama": "meta/llama-3.3-70b-instruct",
-    "deepseek": "deepseek-ai/deepseek-r1-distill-llama-70b",
+    "deepseek": "deepseek-ai/deepseek-r1-0528",
     "claude": "meta/llama-3.3-70b-instruct",  # Fallback until Anthropic key added
 }
 
@@ -46,16 +45,20 @@ def _build_tools(skill_ids: list[str]) -> list:
     """Map UI skill IDs to real LangChain tools."""
     tools = []
 
-    # Web Search → Tavily
+    # Web Search → Tavily (added in phase 3)
     if "websearch" in skill_ids or "rag" in skill_ids:
-        tavily_key = os.getenv("TAVILY_API_KEY")
-        if tavily_key:
-            tools.append(
-                TavilySearchResults(
-                    max_results=3,
-                    api_key=tavily_key,
+        try:
+            from langchain_community.tools.tavily_search import TavilySearchResults
+            tavily_key = os.getenv("TAVILY_API_KEY")
+            if tavily_key:
+                tools.append(
+                    TavilySearchResults(
+                        max_results=3,
+                        api_key=tavily_key,
+                    )
                 )
-            )
+        except ImportError:
+            print("[Agent] Tavily not available, skipping web search")
 
     return tools
 
@@ -93,19 +96,16 @@ Your soul (foundation model) is: {model_name}
 You have been equipped with the following capabilities:
 {caps_text}
 
-IMPORTANT INSTRUCTIONS:
-- Answer the user's question directly. Do NOT delegate to sub-agents or use the 'task' tool unless the user explicitly asks for a complex multi-step task.
-- Be concise and technically accurate.
-- If you have a web search tool (tavily_search_results_json), use it when the user asks for current information, news, or facts you're unsure about. Do NOT use it for simple greetings or casual conversation.
-- Reference your GPU-accelerated capabilities when discussing performance or computation.
-- You are running on NVIDIA infrastructure and are optimized for speed and accuracy.
-- Keep responses focused and avoid unnecessary tool calls.
+Answer the user's question directly. Be concise and technically accurate.
+If you have a web search tool, use it when the user asks for current information.
+Reference your GPU-accelerated capabilities when discussing performance.
+You are running on NVIDIA infrastructure and are optimized for speed and accuracy.
 """
 
 
 def create_agent(skill_ids: list[str] | None = None, model_id: str = "llama"):
     """
-    Create a Deep Agent configured with the given skills and model.
+    Create a ReAct agent configured with the given skills and model.
     Returns a compiled LangGraph graph.
     """
     if skill_ids is None:
@@ -115,10 +115,10 @@ def create_agent(skill_ids: list[str] | None = None, model_id: str = "llama"):
     tools = _build_tools(skill_ids)
     system_prompt = _build_system_prompt(skill_ids, model_id)
 
-    agent = create_deep_agent(
+    agent = create_react_agent(
         model=model,
         tools=tools,
-        system_prompt=system_prompt,
+        prompt=system_prompt,
     )
 
     return agent

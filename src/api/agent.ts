@@ -1,6 +1,6 @@
 /**
- * SSE client for communicating with the Deep Agent backend.
- * Uses a callback pattern for reliable browser streaming.
+ * API client for the Deep Agent backend.
+ * Session-based: create an agent, then chat with it by session ID.
  */
 
 export interface TokenEvent {
@@ -37,39 +37,70 @@ export interface DoneEvent {
 
 export type AgentEvent = TokenEvent | ToolStartEvent | ToolEndEvent | ErrorEvent | DoneEvent;
 
-interface ChatMessage {
-  role: 'user' | 'agent';
-  content: string;
-}
 
 /**
- * Send a message to the Deep Agent and call onEvent for each SSE event.
- * Returns a promise that resolves when the stream is complete.
+ * Create a new agent session on the backend.
+ * Returns the session_id.
  */
-export async function sendMessage(
-  message: string,
+export async function createAgentSession(
+  modelId: string,
   skillIds: string[],
-  history: ChatMessage[],
-  modelId: string | undefined,
-  onEvent: (event: AgentEvent) => void,
-): Promise<void> {
-  console.log('[Agent] Sending:', message, 'model:', modelId);
+): Promise<string> {
+  console.log('[Agent] Creating session:', modelId, skillIds);
 
-  const response = await fetch('/api/chat', {
+  const response = await fetch('/api/agent', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      message,
-      skill_ids: skillIds,
-      model_id: modelId || 'llama',
-      history: history.map(m => ({ role: m.role, content: m.content })),
-    }),
+    body: JSON.stringify({ model_id: modelId, skill_ids: skillIds }),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Failed to create agent: ${err}`);
+  }
+
+  const data = await response.json();
+  console.log('[Agent] Session created:', data.session_id);
+  return data.session_id;
+}
+
+
+/**
+ * Delete an agent session.
+ */
+export async function deleteAgentSession(sessionId: string): Promise<void> {
+  try {
+    await fetch(`/api/agent/${sessionId}`, { method: 'DELETE' });
+    console.log('[Agent] Session deleted:', sessionId);
+  } catch {
+    // Ignore errors on cleanup
+  }
+}
+
+
+/**
+ * Send a message to an agent session and stream the response.
+ */
+export async function sendMessage(
+  sessionId: string,
+  message: string,
+  onEvent: (event: AgentEvent) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  console.log('[Agent] Sending to session', sessionId, ':', message);
+
+  const response = await fetch(`/api/agent/${sessionId}/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message }),
+    signal,
   });
 
   console.log('[Agent] Response:', response.status, response.headers.get('content-type'));
 
   if (!response.ok) {
-    onEvent({ type: 'error', message: `Server error: ${response.status}` });
+    const err = await response.text();
+    onEvent({ type: 'error', message: `Server error ${response.status}: ${err}` });
     return;
   }
 
@@ -98,7 +129,6 @@ export async function sendMessage(
         const block = buffer.substring(0, blockEnd);
         buffer = buffer.substring(blockEnd + 2);
 
-        // Parse the SSE block
         let eventType = '';
         let eventData = '';
 
@@ -108,7 +138,6 @@ export async function sendMessage(
           } else if (line.startsWith('data:')) {
             eventData = line.substring(5).trim();
           }
-          // Ignore comments (lines starting with ':')
         }
 
         if (!eventType || !eventData) continue;

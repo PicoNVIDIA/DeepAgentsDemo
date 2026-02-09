@@ -4,6 +4,7 @@ import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { motion, AnimatePresence } from 'framer-motion';
 import { skills as allSkills, type Skill } from './data/skills';
 import type { ModelDef } from './data/models';
+import { createAgentSession, deleteAgentSession } from './api/agent';
 import { SoulPicker } from './components/SoulPicker';
 import { SkillPalette } from './components/SkillPalette';
 import { AgentBuilder } from './components/AgentBuilder';
@@ -14,14 +15,14 @@ import { ChatSection } from './components/ChatSection';
 import { SkillCard } from './components/SkillCard';
 import './App.css';
 
-type Phase = 'soul' | 'builder' | 'chat';
+type Phase = 'soul' | 'builder' | 'building' | 'chat';
 
 function App() {
   const [phase, setPhase] = useState<Phase>('soul');
   const [selectedModel, setSelectedModel] = useState<ModelDef | null>(null);
   const [addedSkills, setAddedSkills] = useState<Skill[]>([]);
   const [activeSkill, setActiveSkill] = useState<Skill | null>(null);
-  const [isBuilding, setIsBuilding] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
 
   // Apply accent color CSS variables when model changes
   useEffect(() => {
@@ -65,22 +66,37 @@ function App() {
   }, []);
 
   const handleBuild = useCallback(() => {
-    if (addedSkills.length > 0) {
-      setIsBuilding(true);
+    if (addedSkills.length > 0 && selectedModel) {
+      setPhase('building');
     }
-  }, [addedSkills.length]);
+  }, [addedSkills.length, selectedModel]);
 
-  const handleBuildComplete = useCallback(() => {
-    setIsBuilding(false);
-    setPhase('chat');
-  }, []);
+  // When build animation completes, create the agent session
+  const handleBuildComplete = useCallback(async () => {
+    if (!selectedModel) return;
+
+    try {
+      const skillIds = addedSkills.map(s => s.id);
+      const id = await createAgentSession(selectedModel.id, skillIds);
+      setSessionId(id);
+      setPhase('chat');
+    } catch (err) {
+      console.error('Failed to create agent session:', err);
+      // Fall back to chat anyway — sendMessage will show an error
+      setPhase('chat');
+    }
+  }, [selectedModel, addedSkills]);
 
   const handleReset = useCallback(() => {
+    // Clean up session
+    if (sessionId) {
+      deleteAgentSession(sessionId);
+    }
+    setSessionId(null);
     setAddedSkills([]);
-    setIsBuilding(false);
     setPhase('soul');
     setSelectedModel(null);
-  }, []);
+  }, [sessionId]);
 
   const addedSkillIds = addedSkills.map(s => s.id);
 
@@ -124,7 +140,7 @@ function App() {
               </motion.div>
             )}
 
-            {phase === 'builder' && (
+            {(phase === 'builder' || phase === 'building') && (
               <motion.div
                 key="builder"
                 className="builder-view"
@@ -138,14 +154,14 @@ function App() {
                 <div className="app-main">
                   <AgentBuilder 
                     skills={addedSkills}
-                    isBuilding={isBuilding}
+                    isBuilding={phase === 'building'}
                     isReady={false}
                     onRemoveSkill={handleRemoveSkill}
                   />
                   
                   <BuildButton
                     disabled={addedSkills.length === 0}
-                    isBuilding={isBuilding}
+                    isBuilding={phase === 'building'}
                     isReady={false}
                     onClick={handleBuild}
                     skillCount={addedSkills.length}
@@ -166,7 +182,7 @@ function App() {
                   isVisible={phase === 'chat'}
                   skills={addedSkills}
                   onReset={handleReset}
-                  modelId={selectedModel?.id}
+                  sessionId={sessionId}
                 />
               </motion.div>
             )}
@@ -175,7 +191,7 @@ function App() {
 
         {/* Build animation overlay */}
         <BuildAnimation 
-          isActive={isBuilding}
+          isActive={phase === 'building'}
           onComplete={handleBuildComplete}
         />
 

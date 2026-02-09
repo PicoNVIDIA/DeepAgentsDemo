@@ -40,8 +40,8 @@
 /* Arena */
 .soul-arena {
   position: relative;
-  width: min(800px, 90vw);
-  height: min(600px, 65vh);
+  width: min(1040px, 92vw);
+  height: min(780px, 72vh);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -50,8 +50,8 @@
 
 .soul-ambient {
   position: absolute;
-  width: 350px;
-  height: 350px;
+  width: 455px;
+  height: 455px;
   border-radius: 50%;
   pointer-events: none;
 }
@@ -76,8 +76,8 @@
 }
 
 .soul-robot-svg {
-  width: 140px;
-  height: 196px;
+  width: 182px;
+  height: 255px;
 }
 
 .soul-robot.selected .soul-robot-svg {
@@ -86,8 +86,8 @@
 
 .soul-select-pulse {
   position: absolute;
-  width: 140px;
-  height: 140px;
+  width: 182px;
+  height: 182px;
   border: 3px solid;
   border-radius: 50%;
   pointer-events: none;
@@ -139,7 +139,7 @@
   cursor: pointer;
   user-select: none;
   transition: border-color 0.3s, box-shadow 0.3s;
-  min-width: 160px;
+  min-width: 190px;
   text-align: center;
   position: relative;
 }
@@ -160,8 +160,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
+  width: 56px;
+  height: 56px;
 }
 
 .soul-card-info {

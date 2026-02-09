@@ -22,7 +22,7 @@ export const models: ModelDef[] = [
     accentColor: '#8dc63f',
     glowColor: 'rgba(118, 185, 0, 0.4)',
     subtleColor: 'rgba(118, 185, 0, 0.1)',
-    backendModel: 'nvidia/llama-3.1-nemotron-70b-instruct',
+    backendModel: 'nvidia/llama-3.3-nemotron-super-49b-v1.5',
   },
   {
     id: 'llama',
@@ -46,7 +46,7 @@ export const models: ModelDef[] = [
     accentColor: '#7B8FFE',
     glowColor: 'rgba(77, 107, 254, 0.4)',
     subtleColor: 'rgba(77, 107, 254, 0.1)',
-    backendModel: 'deepseek-ai/deepseek-r1-distill-llama-70b',
+    backendModel: 'deepseek-ai/deepseek-r1-0528',
   },
   {
     id: 'claude',

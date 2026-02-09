@@ -62,14 +62,25 @@ export function SoulPicker({ onSelect }: SoulPickerProps) {
           transition={{ duration: 0.5 }}
         />
 
-        {/* Robot in the center */}
+        {/* Robot in the center — full idle animation */}
         <motion.div
           className={`soul-robot ${selectedId ? 'selected' : ''}`}
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.3, type: 'spring', stiffness: 200, damping: 20 }}
         >
-          <svg viewBox="0 0 200 280" className="soul-robot-svg">
+          <motion.svg
+            viewBox="0 0 200 280"
+            className="soul-robot-svg"
+            animate={{
+              y: [0, -6, 0],
+              rotate: [0, 1, 0, -1, 0],
+            }}
+            transition={{
+              y: { duration: 3, repeat: Infinity, ease: 'easeInOut' },
+              rotate: { duration: 5, repeat: Infinity, ease: 'easeInOut' },
+            }}
+          >
             <defs>
               <linearGradient id="soulBodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
                 <stop offset="0%" stopColor="#3a3a3a" />
@@ -85,35 +96,64 @@ export function SoulPicker({ onSelect }: SoulPickerProps) {
               </filter>
             </defs>
 
-            {/* Head */}
-            <rect x="50" y="20" width="100" height="70" rx="15" fill="url(#soulBodyGrad)" stroke="#444" strokeWidth="2" />
-            {/* Antenna */}
-            <line x1="100" y1="20" x2="100" y2="5" stroke="#555" strokeWidth="3" />
-            <motion.circle
-              cx="100" cy="5" r="5"
-              animate={{ fill: activeColor }}
-              transition={{ duration: 0.4 }}
-              filter="url(#soulGlow)"
-            />
-            {/* Eyes */}
-            <motion.ellipse cx="75" cy="50" rx="12" ry="15"
-              animate={{ fill: activeColor }}
-              transition={{ duration: 0.4 }}
-              filter="url(#soulGlow)"
-            />
-            <motion.ellipse cx="125" cy="50" rx="12" ry="15"
-              animate={{ fill: activeColor }}
-              transition={{ duration: 0.4 }}
-              filter="url(#soulGlow)"
-            />
-            <ellipse cx="78" cy="46" rx="4" ry="5" fill="rgba(255,255,255,0.3)" />
-            <ellipse cx="128" cy="46" rx="4" ry="5" fill="rgba(255,255,255,0.3)" />
-            {/* Mouth */}
-            <motion.rect x="70" y="70" width="60" height="10" rx="5" fill="#333"
-              animate={{ stroke: activeColor }}
-              transition={{ duration: 0.4 }}
-              strokeWidth="1"
-            />
+            {/* Head — bobs independently */}
+            <motion.g
+              animate={{ y: [0, -3, 0, -2, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <rect x="50" y="20" width="100" height="70" rx="15" fill="url(#soulBodyGrad)" stroke="#444" strokeWidth="2" />
+              {/* Antenna */}
+              <motion.g
+                animate={{ y: [0, -3, 0] }}
+                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                <line x1="100" y1="20" x2="100" y2="5" stroke="#555" strokeWidth="3" />
+                <motion.circle
+                  cx="100" cy="5" r="5"
+                  animate={{ fill: activeColor }}
+                  transition={{ duration: 0.4 }}
+                  filter="url(#soulGlow)"
+                />
+              </motion.g>
+              {/* Eyes — blink */}
+              <motion.ellipse cx="75" cy="50" rx="12"
+                animate={{
+                  fill: activeColor,
+                  ry: [15, 15, 15, 1, 15, 15, 15, 15, 15, 1, 1, 15],
+                }}
+                transition={{
+                  fill: { duration: 0.4 },
+                  ry: { duration: 5, repeat: Infinity, ease: 'easeInOut', times: [0, 0.3, 0.38, 0.4, 0.42, 0.6, 0.78, 0.8, 0.81, 0.82, 0.84, 0.86] },
+                }}
+                filter="url(#soulGlow)"
+              />
+              <motion.ellipse cx="125" cy="50" rx="12"
+                animate={{
+                  fill: activeColor,
+                  ry: [15, 15, 15, 1, 15, 15, 15, 15, 15, 1, 1, 15],
+                }}
+                transition={{
+                  fill: { duration: 0.4 },
+                  ry: { duration: 5, repeat: Infinity, ease: 'easeInOut', times: [0, 0.3, 0.38, 0.4, 0.42, 0.6, 0.78, 0.8, 0.81, 0.82, 0.84, 0.86] },
+                }}
+                filter="url(#soulGlow)"
+              />
+              {/* Eye highlights — hide during blink */}
+              <motion.ellipse cx="78" cy="46" rx="4" fill="rgba(255,255,255,0.3)"
+                animate={{ ry: [5, 5, 5, 0, 5, 5, 5, 5, 5, 0, 0, 5] }}
+                transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', times: [0, 0.3, 0.38, 0.4, 0.42, 0.6, 0.78, 0.8, 0.81, 0.82, 0.84, 0.86] }}
+              />
+              <motion.ellipse cx="128" cy="46" rx="4" fill="rgba(255,255,255,0.3)"
+                animate={{ ry: [5, 5, 5, 0, 5, 5, 5, 5, 5, 0, 0, 5] }}
+                transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', times: [0, 0.3, 0.38, 0.4, 0.42, 0.6, 0.78, 0.8, 0.81, 0.82, 0.84, 0.86] }}
+              />
+              {/* Mouth */}
+              <motion.rect x="70" y="70" width="60" height="10" rx="5" fill="#333"
+                animate={{ stroke: activeColor }}
+                transition={{ duration: 0.4 }}
+                strokeWidth="1"
+              />
+            </motion.g>
 
             {/* Neck */}
             <rect x="85" y="90" width="30" height="15" fill="#2a2a2a" />
@@ -150,18 +190,30 @@ export function SoulPicker({ onSelect }: SoulPickerProps) {
               />
             ))}
 
-            {/* Arms */}
-            <rect x="20" y="110" width="18" height="60" rx="8" fill="url(#soulBodyGrad)" stroke="#444" strokeWidth="2" />
-            <circle cx="29" cy="175" r="10" fill="#2a2a2a" stroke="#444" strokeWidth="2" />
-            <rect x="162" y="110" width="18" height="60" rx="8" fill="url(#soulBodyGrad)" stroke="#444" strokeWidth="2" />
-            <circle cx="171" cy="175" r="10" fill="#2a2a2a" stroke="#444" strokeWidth="2" />
+            {/* Arms — sway opposite */}
+            <motion.g
+              animate={{ rotate: [0, 3, 0, -3, 0] }}
+              transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
+              style={{ transformOrigin: '29px 110px' }}
+            >
+              <rect x="20" y="110" width="18" height="60" rx="8" fill="url(#soulBodyGrad)" stroke="#444" strokeWidth="2" />
+              <circle cx="29" cy="175" r="10" fill="#2a2a2a" stroke="#444" strokeWidth="2" />
+            </motion.g>
+            <motion.g
+              animate={{ rotate: [0, -3, 0, 3, 0] }}
+              transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
+              style={{ transformOrigin: '171px 110px' }}
+            >
+              <rect x="162" y="110" width="18" height="60" rx="8" fill="url(#soulBodyGrad)" stroke="#444" strokeWidth="2" />
+              <circle cx="171" cy="175" r="10" fill="#2a2a2a" stroke="#444" strokeWidth="2" />
+            </motion.g>
 
             {/* Legs */}
             <rect x="55" y="205" width="25" height="50" rx="5" fill="url(#soulBodyGrad)" stroke="#444" strokeWidth="2" />
             <rect x="120" y="205" width="25" height="50" rx="5" fill="url(#soulBodyGrad)" stroke="#444" strokeWidth="2" />
             <rect x="50" y="255" width="35" height="15" rx="5" fill="#2a2a2a" stroke="#444" strokeWidth="2" />
             <rect x="115" y="255" width="35" height="15" rx="5" fill="#2a2a2a" stroke="#444" strokeWidth="2" />
-          </svg>
+          </motion.svg>
 
           {/* Selection pulse */}
           <AnimatePresence>
@@ -179,11 +231,11 @@ export function SoulPicker({ onSelect }: SoulPickerProps) {
         </motion.div>
 
         {/* Connection lines (drawn behind cards) */}
-        <svg className="soul-connections" viewBox="0 0 800 600">
+        <svg className="soul-connections" viewBox="0 0 1040 780">
           {models.map((model, i) => {
             const pos = positions[i];
-            const cx = 400, cy = 300;
-            const dist = 220;
+            const cx = 520, cy = 390;
+            const dist = 286;
             const ex = cx + pos.x * dist;
             const ey = cy + pos.y * dist;
             const isHovered = hoveredId === model.id;
@@ -232,7 +284,7 @@ export function SoulPicker({ onSelect }: SoulPickerProps) {
                 onClick={() => !selectedId && handleSelect(model)}
               >
                 <div className="soul-card-icon">
-                    <ModelIcon modelId={model.id} size={44} />
+                    <ModelIcon modelId={model.id} size={52} />
                   </div>
                 <div className="soul-card-info">
                   <h3 className="soul-card-name">{model.name}</h3>
