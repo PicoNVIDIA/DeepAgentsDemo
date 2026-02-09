@@ -14,7 +14,7 @@
 }
 
 .skill-card:hover {
-  border-color: var(--nvidia-green);
+  border-color: var(--accent-color);
   box-shadow: var(--shadow-glow);
 }
 
@@ -22,7 +22,7 @@
   cursor: grabbing;
   opacity: 0.9;
   box-shadow: var(--shadow-lg), var(--shadow-glow-lg);
-  border-color: var(--nvidia-green);
+  border-color: var(--accent-color);
   z-index: var(--z-modal);
 }
 
@@ -38,7 +38,7 @@
   width: 40px;
   height: 40px;
   font-size: 1.5rem;
-  background: var(--nvidia-green-subtle);
+  background: var(--accent-subtle);
   border-radius: var(--radius-md);
   flex-shrink: 0;
 }
@@ -86,7 +86,7 @@
 
 .skill-card-category[data-category="cuda"] {
   background: rgba(118, 185, 0, 0.2);
-  color: var(--nvidia-green);
+  color: var(--accent-color);
 }
 
 .skill-card-category[data-category="ai"] {
@@ -104,7 +104,7 @@
   inset: 0;
   background: radial-gradient(
     circle at 50% 50%,
-    var(--nvidia-green-subtle) 0%,
+    var(--accent-subtle) 0%,
     transparent 70%
   );
   opacity: 0;
@@ -120,7 +120,7 @@
   opacity: 1;
   background: radial-gradient(
     circle at 50% 50%,
-    var(--nvidia-green-glow) 0%,
+    var(--accent-glow) 0%,
     transparent 70%
   );
 }

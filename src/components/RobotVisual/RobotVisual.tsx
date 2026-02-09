@@ -6,10 +6,12 @@ interface RobotVisualProps {
   skills: Skill[];
   isBuilding: boolean;
   isReady: boolean;
+  accentColor?: string;
 }
 
-export function RobotVisual({ skills, isBuilding, isReady }: RobotVisualProps) {
+export function RobotVisual({ skills, isBuilding, isReady, accentColor = '#76B900' }: RobotVisualProps) {
   const hasSkills = skills.length > 0;
+  const c = accentColor;
 
   return (
     <div className={`robot-container ${isBuilding ? 'building' : ''} ${isReady ? 'ready' : ''}`}>
@@ -37,8 +39,8 @@ export function RobotVisual({ skills, isBuilding, isReady }: RobotVisualProps) {
           </linearGradient>
           
           <linearGradient id="glowGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#76B900" stopOpacity="0.8" />
-            <stop offset="100%" stopColor="#76B900" stopOpacity="0.2" />
+            <stop offset="0%" stopColor={c} stopOpacity="0.8" />
+            <stop offset="100%" stopColor={c} stopOpacity="0.2" />
           </linearGradient>
           
           <filter id="glow">
@@ -79,7 +81,7 @@ export function RobotVisual({ skills, isBuilding, isReady }: RobotVisualProps) {
               cx="100"
               cy="5"
               r="5"
-              fill={hasSkills ? '#76B900' : '#444'}
+              fill={hasSkills ? c : '#444'}
               filter={hasSkills ? 'url(#glow)' : 'none'}
             />
           </motion.g>
@@ -94,7 +96,7 @@ export function RobotVisual({ skills, isBuilding, isReady }: RobotVisualProps) {
               cy="50"
               rx="12"
               ry="15"
-              fill={hasSkills ? '#76B900' : '#333'}
+              fill={hasSkills ? c : '#333'}
               filter={hasSkills ? 'url(#glow)' : 'none'}
             />
             <ellipse
@@ -102,7 +104,7 @@ export function RobotVisual({ skills, isBuilding, isReady }: RobotVisualProps) {
               cy="50"
               rx="12"
               ry="15"
-              fill={hasSkills ? '#76B900' : '#333'}
+              fill={hasSkills ? c : '#333'}
               filter={hasSkills ? 'url(#glow)' : 'none'}
             />
             {/* Eye highlights */}
@@ -118,7 +120,7 @@ export function RobotVisual({ skills, isBuilding, isReady }: RobotVisualProps) {
             height="10"
             rx="5"
             fill="#333"
-            stroke={hasSkills ? '#76B900' : '#444'}
+            stroke={hasSkills ? c : '#444'}
             strokeWidth="1"
           />
         </g>
@@ -148,7 +150,7 @@ export function RobotVisual({ skills, isBuilding, isReady }: RobotVisualProps) {
             height="80"
             rx="5"
             fill="#1a1a1a"
-            stroke={hasSkills ? '#76B900' : '#333'}
+            stroke={hasSkills ? c : '#333'}
             strokeWidth="1"
           />
 
@@ -158,7 +160,7 @@ export function RobotVisual({ skills, isBuilding, isReady }: RobotVisualProps) {
             cy="155"
             r={hasSkills ? 20 : 15}
             fill={hasSkills ? 'url(#glowGradient)' : '#222'}
-            stroke={hasSkills ? '#76B900' : '#333'}
+            stroke={hasSkills ? c : '#333'}
             strokeWidth="2"
             filter={hasSkills ? 'url(#glow)' : 'none'}
             animate={hasSkills ? {
@@ -192,7 +194,7 @@ export function RobotVisual({ skills, isBuilding, isReady }: RobotVisualProps) {
                 width="8"
                 height="20"
                 rx="2"
-                fill={skills[i] ? '#76B900' : '#333'}
+                fill={skills[i] ? c : '#333'}
                 filter={skills[i] ? 'url(#glow)' : 'none'}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -208,7 +210,7 @@ export function RobotVisual({ skills, isBuilding, isReady }: RobotVisualProps) {
                 width="8"
                 height="20"
                 rx="2"
-                fill={skills[i + 3] ? '#76B900' : '#333'}
+                fill={skills[i + 3] ? c : '#333'}
                 filter={skills[i + 3] ? 'url(#glow)' : 'none'}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -255,7 +257,7 @@ export function RobotVisual({ skills, isBuilding, isReady }: RobotVisualProps) {
                   y1="155"
                   x2={100 + Math.cos((i * Math.PI) / 4) * 80}
                   y2={155 + Math.sin((i * Math.PI) / 4) * 80}
-                  stroke="#76B900"
+                  stroke={c}
                   strokeWidth="2"
                   strokeLinecap="round"
                   initial={{ pathLength: 0, opacity: 0 }}
@@ -289,7 +291,7 @@ export function RobotVisual({ skills, isBuilding, isReady }: RobotVisualProps) {
                 rx="40"
                 ry="8"
                 fill="none"
-                stroke="#76B900"
+                stroke={c}
                 strokeWidth="3"
                 filter="url(#glow)"
                 animate={{ 

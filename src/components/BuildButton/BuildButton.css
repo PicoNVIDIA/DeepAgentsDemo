@@ -29,7 +29,7 @@
 
 .build-button.active {
   background: linear-gradient(135deg, var(--bg-elevated) 0%, var(--bg-surface) 100%);
-  border-color: var(--nvidia-green);
+  border-color: var(--accent-color);
   color: var(--text-primary);
   cursor: pointer;
   box-shadow: var(--shadow-glow);
@@ -41,16 +41,16 @@
 
 .build-button.building {
   cursor: wait;
-  border-color: var(--nvidia-green);
+  border-color: var(--accent-color);
   animation: building-pulse 1s ease-in-out infinite;
 }
 
 @keyframes building-pulse {
   0%, 100% {
-    box-shadow: 0 0 20px var(--nvidia-green-glow);
+    box-shadow: 0 0 20px var(--accent-glow);
   }
   50% {
-    box-shadow: 0 0 40px var(--nvidia-green-glow);
+    box-shadow: 0 0 40px var(--accent-glow);
   }
 }
 
@@ -59,7 +59,7 @@
   inset: 0;
   background: radial-gradient(
     circle at center,
-    var(--nvidia-green-subtle) 0%,
+    var(--accent-subtle) 0%,
     transparent 70%
   );
   opacity: 0;
@@ -74,7 +74,7 @@
   opacity: 1;
   background: radial-gradient(
     circle at center,
-    var(--nvidia-green-glow) 0%,
+    var(--accent-glow) 0%,
     transparent 70%
   );
 }
@@ -106,7 +106,7 @@
 
 .skill-badge {
   padding: var(--space-1) var(--space-2);
-  background: var(--nvidia-green);
+  background: var(--accent-color);
   border-radius: var(--radius-full);
   color: var(--text-inverse);
   font-size: var(--text-xs);
@@ -116,8 +116,8 @@
 .building-spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid var(--nvidia-green-subtle);
-  border-top-color: var(--nvidia-green);
+  border: 2px solid var(--accent-subtle);
+  border-top-color: var(--accent-color);
   border-radius: 50%;
 }
 
@@ -127,7 +127,7 @@
   width: 100%;
   height: 100%;
   pointer-events: none;
-  color: var(--nvidia-green);
+  color: var(--accent-color);
 }
 
 .button-particles {
@@ -142,9 +142,9 @@
   bottom: 100%;
   width: 4px;
   height: 4px;
-  background: var(--nvidia-green);
+  background: var(--accent-color);
   border-radius: 50%;
-  box-shadow: 0 0 6px var(--nvidia-green);
+  box-shadow: 0 0 6px var(--accent-color);
 }
 
 .build-hint {
@@ -160,7 +160,7 @@
   gap: var(--space-4);
   padding: var(--space-4) var(--space-6);
   background: var(--bg-elevated);
-  border: 2px solid var(--nvidia-green);
+  border: 2px solid var(--accent-color);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-glow-lg);
 }
@@ -171,7 +171,7 @@
   justify-content: center;
   width: 48px;
   height: 48px;
-  background: var(--nvidia-green);
+  background: var(--accent-color);
   border-radius: 50%;
   color: var(--text-inverse);
   font-size: 1.5rem;
@@ -182,7 +182,7 @@
   margin: 0;
   font-size: var(--text-lg);
   font-weight: var(--font-bold);
-  color: var(--nvidia-green);
+  color: var(--accent-color);
 }
 
 .success-text p {
@@ -205,6 +205,6 @@
 }
 
 .reset-button:hover {
-  border-color: var(--nvidia-green);
-  color: var(--nvidia-green);
+  border-color: var(--accent-color);
+  color: var(--accent-color);
 }

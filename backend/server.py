@@ -30,6 +30,7 @@ app.add_middleware(
 class ChatRequest(BaseModel):
     message: str
     skill_ids: list[str] = []
+    model_id: str = 'llama'
     history: list[dict] = []
 
 
@@ -56,7 +57,7 @@ async def chat(request: ChatRequest):
             # Lazy import to avoid blocking startup
             from agent import create_agent
 
-            agent = create_agent(request.skill_ids)
+            agent = create_agent(request.skill_ids, request.model_id)
 
             # Build message history for the agent
             messages = []
@@ -75,6 +76,7 @@ async def chat(request: ChatRequest):
             async for event in agent.astream_events(
                 {"messages": messages},
                 version="v2",
+                config={"recursion_limit": 10},
             ):
                 kind = event.get("event", "")
 
@@ -97,23 +99,33 @@ async def chat(request: ChatRequest):
 
                     # Map tool names to skill icons
                     icon_map = {
+                        "tavily_search_results_json": "🌐",
                         "tavily_search_results": "🌐",
+                        "task": "🤖",
                         "execute": "💻",
                         "read_file": "📁",
                         "write_file": "📁",
+                        "edit_file": "📁",
                         "grep": "🔍",
                         "glob": "🔍",
                         "ls": "📁",
+                        "write_todos": "📝",
+                        "read_todos": "📝",
                     }
 
                     skill_id_map = {
+                        "tavily_search_results_json": "websearch",
                         "tavily_search_results": "websearch",
+                        "task": "codeinterpreter",
                         "execute": "codeinterpreter",
                         "read_file": "fileio",
                         "write_file": "fileio",
+                        "edit_file": "fileio",
                         "grep": "fileio",
                         "glob": "fileio",
                         "ls": "fileio",
+                        "write_todos": "api",
+                        "read_todos": "api",
                     }
 
                     # Truncate input for display

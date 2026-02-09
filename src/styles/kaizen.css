@@ -8,6 +8,12 @@
   --nvidia-green-glow: rgba(118, 185, 0, 0.4);
   --nvidia-green-subtle: rgba(118, 185, 0, 0.1);
 
+  /* Dynamic accent (set by JS based on selected model) */
+  --accent-color: #76B900;
+  --accent-light: #8dc63f;
+  --accent-glow: rgba(118, 185, 0, 0.4);
+  --accent-subtle: rgba(118, 185, 0, 0.1);
+
   /* Dark Theme Backgrounds - NVIDIA Dark */
   --bg-primary: #111111;
   --bg-secondary: #1a1a1a;
@@ -64,12 +70,12 @@
   --text-tertiary: #808080;
   --text-disabled: #4d4d4d;
   --text-inverse: #000000;
-  --text-brand: var(--nvidia-green);
+  --text-brand: var(--accent-color);
 
   /* Border Colors */
   --border-default: #333333;
   --border-hover: #444444;
-  --border-focus: var(--nvidia-green);
+  --border-focus: var(--accent-color);
   --border-subtle: #2a2a2a;
 
   /* Typography - NVIDIA Sans with fallbacks */
@@ -122,8 +128,8 @@
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
   --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.6);
-  --shadow-glow: 0 0 20px var(--nvidia-green-glow);
-  --shadow-glow-lg: 0 0 40px var(--nvidia-green-glow);
+  --shadow-glow: 0 0 20px var(--accent-glow);
+  --shadow-glow-lg: 0 0 40px var(--accent-glow);
 
   /* Transitions */
   --transition-fast: 150ms ease;

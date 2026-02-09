@@ -51,7 +51,7 @@
 .status-dot {
   width: 8px;
   height: 8px;
-  background: var(--nvidia-green);
+  background: var(--accent-color);
   border-radius: 50%;
   animation: pulse-dot 2s ease-in-out infinite;
 }
@@ -76,11 +76,11 @@
   align-items: center;
   gap: 4px;
   padding: 2px 8px;
-  background: var(--nvidia-green-subtle);
+  background: var(--accent-subtle);
   border-radius: var(--radius-full);
   font-size: 10px;
   font-weight: var(--font-medium);
-  color: var(--nvidia-green);
+  color: var(--accent-color);
 }
 
 .skill-tag.more {
@@ -103,8 +103,8 @@
 }
 
 .reset-btn:hover {
-  border-color: var(--nvidia-green);
-  color: var(--nvidia-green);
+  border-color: var(--accent-color);
+  color: var(--accent-color);
 }
 
 /* Messages */
@@ -141,8 +141,8 @@
 }
 
 .message.agent .message-avatar {
-  background: var(--nvidia-green-subtle);
-  border: 1px solid var(--nvidia-green);
+  background: var(--accent-subtle);
+  border: 1px solid var(--accent-color);
 }
 
 .message-content {
@@ -165,7 +165,7 @@
 }
 
 .message.user .message-text {
-  background: var(--nvidia-green);
+  background: var(--accent-color);
   color: var(--text-inverse);
   border-top-right-radius: var(--radius-sm);
 }
@@ -203,7 +203,7 @@
 .typing-indicator span {
   width: 8px;
   height: 8px;
-  background: var(--nvidia-green);
+  background: var(--accent-color);
   border-radius: 50%;
   animation: typing-bounce 1.4s ease-in-out infinite;
 }
@@ -246,7 +246,7 @@
 }
 
 .chat-input-wrapper:focus-within {
-  border-color: var(--nvidia-green);
+  border-color: var(--accent-color);
 }
 
 .chat-input {
@@ -275,7 +275,7 @@
   width: 40px;
   height: 40px;
   padding: 0;
-  background: var(--nvidia-green);
+  background: var(--accent-color);
   border: none;
   border-radius: var(--radius-md);
   color: var(--text-inverse);
@@ -284,7 +284,7 @@
 }
 
 .send-btn:hover:not(:disabled) {
-  background: var(--nvidia-green-light);
+  background: var(--accent-light);
   transform: scale(1.05);
 }
 
@@ -312,7 +312,7 @@
 
 .cursor-blink {
   display: inline;
-  color: var(--nvidia-green);
+  color: var(--accent-color);
   animation: blink-cursor 0.8s step-end infinite;
   font-weight: normal;
 }

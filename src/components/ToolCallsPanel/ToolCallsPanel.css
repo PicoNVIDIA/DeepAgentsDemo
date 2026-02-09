@@ -29,15 +29,15 @@
 }
 
 .tool-panel-title svg {
-  color: var(--nvidia-green);
+  color: var(--accent-color);
 }
 
 .tool-panel-count {
   font-size: var(--text-xs);
   font-family: var(--font-family-mono);
-  color: var(--nvidia-green);
+  color: var(--accent-color);
   padding: 2px 8px;
-  background: var(--nvidia-green-subtle);
+  background: var(--accent-subtle);
   border-radius: var(--radius-full);
 }
 
@@ -71,7 +71,7 @@
 }
 
 .toggle-btn.active {
-  background: var(--nvidia-green);
+  background: var(--accent-color);
   color: var(--text-inverse);
   box-shadow: 0 0 8px rgba(118, 185, 0, 0.3);
 }
@@ -131,7 +131,7 @@
 }
 
 .web-robot-node.active .robot-node-inner {
-  border-color: var(--nvidia-green);
+  border-color: var(--accent-color);
   box-shadow: 0 0 20px rgba(118, 185, 0, 0.4);
 }
 
@@ -143,7 +143,7 @@
 .robot-pulse-ring {
   position: absolute;
   inset: 0;
-  border: 2px solid var(--nvidia-green);
+  border: 2px solid var(--accent-color);
   border-radius: 50%;
   pointer-events: none;
 }
@@ -178,7 +178,7 @@
 }
 
 .web-skill-node.active .skill-node-inner {
-  border-color: var(--nvidia-green);
+  border-color: var(--accent-color);
   background: rgba(118, 185, 0, 0.2);
   box-shadow: 0 0 16px rgba(118, 185, 0, 0.5);
 }
@@ -196,7 +196,7 @@
 }
 
 .web-skill-node.active .skill-node-label {
-  color: var(--nvidia-green);
+  color: var(--accent-color);
 }
 
 .skill-node-badge {
@@ -208,7 +208,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--nvidia-green);
+  background: var(--accent-color);
   color: var(--text-inverse);
   border-radius: 50%;
   font-size: 9px;
@@ -219,7 +219,7 @@
 .node-glow-ring {
   position: absolute;
   inset: 0;
-  border: 2px solid var(--nvidia-green);
+  border: 2px solid var(--accent-color);
   border-radius: 50%;
   pointer-events: none;
 }
@@ -239,11 +239,11 @@
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
   background: var(--bg-elevated);
-  border: 1px solid var(--nvidia-green);
+  border: 1px solid var(--accent-color);
   border-radius: var(--radius-full);
   font-size: var(--text-xs);
   font-weight: var(--font-semibold);
-  color: var(--nvidia-green);
+  color: var(--accent-color);
   white-space: nowrap;
   z-index: 20;
   box-shadow: 0 0 15px rgba(118, 185, 0, 0.2);
@@ -252,7 +252,7 @@
 .active-label-dot {
   width: 6px;
   height: 6px;
-  background: var(--nvidia-green);
+  background: var(--accent-color);
   border-radius: 50%;
   animation: blink-dot 0.6s ease-in-out infinite alternate;
 }
@@ -307,9 +307,9 @@
 }
 
 .inventory-item.active {
-  border-color: var(--nvidia-green);
-  background: var(--nvidia-green-subtle);
-  color: var(--nvidia-green);
+  border-color: var(--accent-color);
+  background: var(--accent-subtle);
+  color: var(--accent-color);
 }
 
 .inventory-icon {
@@ -329,7 +329,7 @@
   font-size: 9px;
   font-weight: var(--font-bold);
   font-family: var(--font-family-mono);
-  color: var(--nvidia-green);
+  color: var(--accent-color);
   background: rgba(118, 185, 0, 0.2);
   padding: 1px 5px;
   border-radius: var(--radius-full);
@@ -339,7 +339,7 @@
 .active-indicator {
   position: absolute;
   inset: 0;
-  border: 2px solid var(--nvidia-green);
+  border: 2px solid var(--accent-color);
   border-radius: var(--radius-md);
   pointer-events: none;
 }
@@ -387,12 +387,12 @@
 }
 
 .log-entry.running {
-  border-color: var(--nvidia-green);
+  border-color: var(--accent-color);
   box-shadow: 0 0 12px rgba(118, 185, 0, 0.15);
 }
 
 .log-entry.success {
-  border-left: 3px solid var(--nvidia-green);
+  border-left: 3px solid var(--accent-color);
 }
 
 .log-entry.error {
@@ -494,7 +494,7 @@
 
 .progress-bar {
   height: 100%;
-  background: var(--nvidia-green);
+  background: var(--accent-color);
   border-radius: 1px;
-  box-shadow: 0 0 6px var(--nvidia-green);
+  box-shadow: 0 0 6px var(--accent-color);
 }

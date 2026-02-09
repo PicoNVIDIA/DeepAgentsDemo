@@ -17,9 +17,10 @@ interface ChatSectionProps {
   isVisible: boolean;
   skills: Skill[];
   onReset: () => void;
+  modelId?: string;
 }
 
-export function ChatSection({ isVisible, skills, onReset }: ChatSectionProps) {
+export function ChatSection({ isVisible, skills, onReset, modelId }: ChatSectionProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -80,7 +81,10 @@ export function ChatSection({ isVisible, skills, onReset }: ChatSectionProps) {
     let fullContent = '';
 
     try {
-      for await (const event of sendMessage(currentInput, skillIds, history)) {
+      console.log('[Chat] Starting stream for:', currentInput);
+
+      await sendMessage(currentInput, skillIds, history, modelId, (event) => {
+        console.log('[Chat] Event:', event.type);
         switch (event.type) {
           case 'token':
             fullContent += event.content;
@@ -126,8 +130,9 @@ export function ChatSection({ isVisible, skills, onReset }: ChatSectionProps) {
           case 'done':
             break;
         }
-      }
+      });
     } catch (err) {
+      console.error('[Chat] Stream error:', err);
       const errorMsg = err instanceof Error ? err.message : 'Connection failed';
       fullContent = fullContent || `⚠️ Could not reach the agent backend.\n\n${errorMsg}\n\nMake sure the backend is running: \`cd backend && python server.py\``;
     }

@@ -1,6 +1,6 @@
 /**
  * SSE client for communicating with the Deep Agent backend.
- * Parses the stream into typed events for the chat UI.
+ * Uses a callback pattern for reliable browser streaming.
  */
 
 export interface TokenEvent {
@@ -43,97 +43,116 @@ interface ChatMessage {
 }
 
 /**
- * Send a message to the Deep Agent and yield streaming events.
+ * Send a message to the Deep Agent and call onEvent for each SSE event.
+ * Returns a promise that resolves when the stream is complete.
  */
-export async function* sendMessage(
+export async function sendMessage(
   message: string,
   skillIds: string[],
   history: ChatMessage[],
-): AsyncGenerator<AgentEvent> {
+  modelId: string | undefined,
+  onEvent: (event: AgentEvent) => void,
+): Promise<void> {
+  console.log('[Agent] Sending:', message, 'model:', modelId);
+
   const response = await fetch('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       message,
       skill_ids: skillIds,
+      model_id: modelId || 'llama',
       history: history.map(m => ({ role: m.role, content: m.content })),
     }),
   });
 
+  console.log('[Agent] Response:', response.status, response.headers.get('content-type'));
+
   if (!response.ok) {
-    yield { type: 'error', message: `Server error: ${response.status}` };
+    onEvent({ type: 'error', message: `Server error: ${response.status}` });
     return;
   }
 
   const reader = response.body?.getReader();
   if (!reader) {
-    yield { type: 'error', message: 'No response body' };
+    onEvent({ type: 'error', message: 'No response body' });
     return;
   }
 
   const decoder = new TextDecoder();
   let buffer = '';
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        console.log('[Agent] Stream ended');
+        break;
+      }
 
-    buffer += decoder.decode(value, { stream: true });
+      buffer += decoder.decode(value, { stream: true });
 
-    // Parse SSE lines from the buffer
-    const lines = buffer.split('\n');
-    buffer = lines.pop() || '';
+      // Process complete SSE blocks (separated by double newlines)
+      let blockEnd: number;
+      while ((blockEnd = buffer.indexOf('\n\n')) !== -1) {
+        const block = buffer.substring(0, blockEnd);
+        buffer = buffer.substring(blockEnd + 2);
 
-    let eventType = '';
-    let eventData = '';
+        // Parse the SSE block
+        let eventType = '';
+        let eventData = '';
 
-    for (const line of lines) {
-      if (line.startsWith('event:')) {
-        eventType = line.slice(6).trim();
-      } else if (line.startsWith('data:')) {
-        eventData = line.slice(5).trim();
-      } else if (line === '' && eventType && eventData) {
-        // Complete SSE event
+        for (const line of block.split('\n')) {
+          if (line.startsWith('event:')) {
+            eventType = line.substring(6).trim();
+          } else if (line.startsWith('data:')) {
+            eventData = line.substring(5).trim();
+          }
+          // Ignore comments (lines starting with ':')
+        }
+
+        if (!eventType || !eventData) continue;
+
         try {
           const parsed = JSON.parse(eventData);
 
           switch (eventType) {
             case 'token':
-              yield { type: 'token', content: parsed.content };
+              onEvent({ type: 'token', content: parsed.content || '' });
               break;
             case 'tool_start':
-              yield {
+              onEvent({
                 type: 'tool_start',
-                id: parsed.id,
-                name: parsed.name,
-                skillId: parsed.skillId,
-                icon: parsed.icon,
-                action: parsed.action,
-                input: parsed.input,
-              };
+                id: parsed.id || '',
+                name: parsed.name || '',
+                skillId: parsed.skillId || 'api',
+                icon: parsed.icon || '🔧',
+                action: parsed.action || parsed.name || '',
+                input: parsed.input || '',
+              });
               break;
             case 'tool_end':
-              yield {
+              onEvent({
                 type: 'tool_end',
-                id: parsed.id,
-                name: parsed.name,
-                output: parsed.output,
-                duration: parsed.duration,
-              };
+                id: parsed.id || '',
+                name: parsed.name || '',
+                output: parsed.output || '',
+                duration: parsed.duration || 0,
+              });
               break;
             case 'error':
-              yield { type: 'error', message: parsed.message };
+              onEvent({ type: 'error', message: parsed.message || 'Unknown error' });
               break;
             case 'done':
-              yield { type: 'done' };
+              onEvent({ type: 'done' });
               break;
           }
         } catch {
-          // skip malformed JSON
+          console.warn('[Agent] Failed to parse SSE:', eventData.substring(0, 100));
         }
-        eventType = '';
-        eventData = '';
       }
     }
+  } finally {
+    reader.releaseLock();
   }
 }

@@ -23,11 +23,11 @@
   height: 200px;
   background: linear-gradient(
     to top,
-    var(--nvidia-green) 0%,
+    var(--accent-color) 0%,
     transparent 100%
   );
   transform-origin: bottom center;
-  box-shadow: 0 0 10px var(--nvidia-green);
+  box-shadow: 0 0 10px var(--accent-color);
 }
 
 .central-burst {
@@ -36,7 +36,7 @@
   height: 100px;
   background: radial-gradient(
     circle,
-    var(--nvidia-green) 0%,
+    var(--accent-color) 0%,
     rgba(118, 185, 0, 0.5) 30%,
     transparent 70%
   );
@@ -53,15 +53,15 @@
   position: absolute;
   width: 8px;
   height: 8px;
-  background: var(--nvidia-green);
+  background: var(--accent-color);
   border-radius: 50%;
-  box-shadow: 0 0 10px var(--nvidia-green), 0 0 20px var(--nvidia-green);
+  box-shadow: 0 0 10px var(--accent-color), 0 0 20px var(--accent-color);
 }
 
 .screen-flash {
   position: fixed;
   inset: 0;
-  background: var(--nvidia-green);
+  background: var(--accent-color);
   pointer-events: none;
 }
 
@@ -76,8 +76,8 @@
 }
 
 .progress-ring-fill {
-  stroke: var(--nvidia-green);
-  filter: drop-shadow(0 0 10px var(--nvidia-green));
+  stroke: var(--accent-color);
+  filter: drop-shadow(0 0 10px var(--accent-color));
 }
 
 .build-status {
@@ -85,6 +85,6 @@
   bottom: 30%;
   font-size: var(--text-lg);
   font-weight: var(--font-semibold);
-  color: var(--nvidia-green);
-  text-shadow: 0 0 20px var(--nvidia-green-glow);
+  color: var(--accent-color);
+  text-shadow: 0 0 20px var(--accent-glow);
 }
