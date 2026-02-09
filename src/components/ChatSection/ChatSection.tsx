@@ -225,11 +225,13 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
   }, [input, isTyping, sessionId, skills]);
 
   const handleApproval = useCallback(async (decision: 'approve' | 'reject') => {
-    if (!sessionId || !pendingInterrupt) return;
+    if (!sessionId) return;
 
     setPendingInterrupt(null);
-    let fullContent = streamingContent;
-    let rawContent = fullContent;
+    interruptRef.current = false;
+
+    let fullContent = '';
+    let rawContent = '';
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 60000);
@@ -261,6 +263,7 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
             setActiveTraces(tracesRef.current);
             break;
           case 'interrupt':
+            interruptRef.current = true;
             setPendingInterrupt(event as InterruptEvent);
             break;
           case 'error':
@@ -277,8 +280,8 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
       clearTimeout(timeout);
     }
 
-    // If another interrupt, don't finalize
-    if (pendingInterrupt) return;
+    // If another interrupt fired, don't finalize
+    if (interruptRef.current) return;
 
     // Finalize
     const finalTraces = tracesRef.current.map(t => ({ ...t, status: 'done' as const }));
@@ -288,7 +291,7 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
     setMessages(prev => [...prev, {
       id: `agent-${Date.now()}`,
       role: 'agent',
-      content: fullContent || 'Tool executed successfully.',
+      content: fullContent || '✅ Done.',
       timestamp: new Date(),
       traces: finalTraces.length > 0 ? finalTraces : undefined,
     }]);
@@ -296,7 +299,7 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
     setActiveTraces([]);
     setStreamingContent('');
     setIsTyping(false);
-  }, [sessionId, pendingInterrupt, streamingContent, skills]);
+  }, [sessionId, skills]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
