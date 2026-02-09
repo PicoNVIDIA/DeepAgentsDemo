@@ -15,13 +15,19 @@ export const skills: Skill[] = [
     category: 'tools',
     icon: '🌐',
   },
+  {
+    id: 'fileio',
+    name: 'File I/O',
+    description: 'Read, write, edit files & search code',
+    category: 'tools',
+    icon: '📁',
+  },
 ];
 
 // Coming soon — will be wired to real backends (MCP, skills, etc.)
 export const comingSoonSkills: Array<{ name: string; icon: string; description: string }> = [
-  { name: 'Code Interpreter', icon: '💻', description: 'Execute & analyze code' },
+  { name: 'Code Execution', icon: '💻', description: 'Run shell commands & scripts' },
   { name: 'RAG', icon: '📚', description: 'Retrieval-augmented generation' },
-  { name: 'File I/O', icon: '📁', description: 'Read and write files' },
   { name: 'API Access', icon: '🔌', description: 'Connect to external services' },
   { name: 'Database', icon: '🗄️', description: 'Query structured data' },
   { name: 'Vision', icon: '👁️', description: 'Image understanding' },

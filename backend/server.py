@@ -18,7 +18,7 @@ from sse_starlette.sse import EventSourceResponse
 from pydantic import BaseModel
 from langchain_core.messages import HumanMessage, AIMessage
 
-from agent import create_agent
+from agent import create_agent  # noqa: E402
 
 app = FastAPI(title="Deep Agent Backend", version="0.2.0")
 
@@ -125,33 +125,43 @@ async def legacy_chat(request: LegacyChatRequest):
 
 # Map tool names to skill icons and IDs
 ICON_MAP = {
+    # Web Search
     "tavily_search_results_json": "🌐",
     "tavily_search_results": "🌐",
-    "task": "🤖",
-    "execute": "💻",
-    "read_file": "📁",
-    "write_file": "📁",
-    "edit_file": "📁",
-    "grep": "🔍",
+    # File I/O (deepagents built-in)
+    "read_file": "📖",
+    "write_file": "✏️",
+    "edit_file": "📝",
+    "ls": "📂",
     "glob": "🔍",
-    "ls": "📁",
-    "write_todos": "📝",
-    "read_todos": "📝",
+    "grep": "🔎",
+    # Shell execution
+    "execute": "💻",
+    # Planning
+    "write_todos": "📋",
+    "read_todos": "📋",
+    # Sub-agents (should not fire, but map just in case)
+    "task": "🤖",
 }
 
 SKILL_ID_MAP = {
+    # Web Search
     "tavily_search_results_json": "websearch",
     "tavily_search_results": "websearch",
-    "task": "codeinterpreter",
-    "execute": "codeinterpreter",
+    # File I/O
     "read_file": "fileio",
     "write_file": "fileio",
     "edit_file": "fileio",
-    "grep": "fileio",
-    "glob": "fileio",
     "ls": "fileio",
-    "write_todos": "api",
-    "read_todos": "api",
+    "glob": "fileio",
+    "grep": "fileio",
+    # Shell
+    "execute": "execute",
+    # Planning
+    "write_todos": "planning",
+    "read_todos": "planning",
+    # Sub-agents
+    "task": "task",
 }
 
 
@@ -166,7 +176,7 @@ async def _stream_response(session: AgentSession, user_message: str) -> AsyncGen
         async for event in session.agent.astream_events(
             {"messages": session.messages},
             version="v2",
-            config={"recursion_limit": 10},
+                config={"recursion_limit": 30},
         ):
             kind = event.get("event", "")
 
