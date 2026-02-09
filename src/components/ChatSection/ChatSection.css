@@ -386,6 +386,99 @@
   margin-left: auto;
 }
 
+/* Human-in-the-loop approval prompt */
+.approval-prompt {
+  margin: var(--space-3) var(--space-2);
+  padding: var(--space-4);
+  background: var(--bg-elevated);
+  border: 2px solid var(--y400);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 0 20px rgba(255, 179, 0, 0.15);
+}
+
+.approval-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.approval-icon {
+  font-size: 1.25rem;
+}
+
+.approval-title {
+  font-size: var(--text-sm);
+  font-weight: var(--font-bold);
+  color: var(--y400);
+}
+
+.approval-details {
+  margin-bottom: var(--space-3);
+}
+
+.approval-action {
+  margin-bottom: var(--space-2);
+}
+
+.approval-tool-name {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  font-family: var(--font-family-mono);
+  color: var(--text-primary);
+}
+
+.approval-args {
+  margin: var(--space-2) 0 0;
+  padding: var(--space-3);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  font-family: var(--font-family-mono);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.approval-buttons {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.approval-btn {
+  flex: 1;
+  padding: var(--space-2) var(--space-4);
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-family-sans);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.approval-btn.approve {
+  background: var(--accent-color);
+  color: var(--text-inverse);
+}
+
+.approval-btn.approve:hover {
+  filter: brightness(1.15);
+}
+
+.approval-btn.reject {
+  background: var(--bg-surface);
+  color: var(--r400);
+  border: 1px solid var(--r400);
+}
+
+.approval-btn.reject:hover {
+  background: rgba(244, 67, 54, 0.1);
+}
+
 /* Markdown styling for agent messages */
 .markdown-body h1,
 .markdown-body h2,

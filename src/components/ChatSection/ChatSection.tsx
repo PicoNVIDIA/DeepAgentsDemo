@@ -5,7 +5,8 @@ import remarkGfm from 'remark-gfm';
 import type { Skill } from '../../data/skills';
 import type { ToolCall } from '../ToolCallsPanel';
 import { ToolCallsPanel } from '../ToolCallsPanel';
-import { sendMessage } from '../../api/agent';
+import { sendMessage, sendApproval } from '../../api/agent';
+import type { InterruptEvent } from '../../api/agent';
 import './ChatSection.css';
 
 interface TraceItem {
@@ -39,7 +40,8 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
   const [activeToolId, setActiveToolId] = useState<string | null>(null);
   const [streamingContent, setStreamingContent] = useState('');
   const [activeTraces, setActiveTraces] = useState<TraceItem[]>([]);
-  const tracesRef = useRef<TraceItem[]>([]); // ref copy for capturing into messages
+  const tracesRef = useRef<TraceItem[]>([]);
+  const [pendingInterrupt, setPendingInterrupt] = useState<InterruptEvent | null>(null); // ref copy for capturing into messages
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -173,6 +175,10 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
             setStreamingContent(fullContent);
             break;
 
+          case 'interrupt':
+            setPendingInterrupt(event as InterruptEvent);
+            break;
+
           case 'done':
             break;
         }
@@ -193,12 +199,19 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
     if (!fullContent) {
       fullContent = '⚠️ No response received from the agent. The backend may need to be restarted.';
     }
+    // If interrupted, keep typing state — we'll resume after approval
+    if (pendingInterrupt) {
+      // Show what we have so far, but keep isTyping true
+      if (fullContent) setStreamingContent(fullContent);
+      return;
+    }
+
     // Capture traces from ref (always up-to-date, unlike state)
     const finalTraces = tracesRef.current.map(t => ({ ...t, status: 'done' as const }));
     setMessages(prev => [...prev, {
       id: `agent-${Date.now()}`,
       role: 'agent',
-      content: fullContent,
+      content: fullContent || '',
       timestamp: new Date(),
       traces: finalTraces.length > 0 ? finalTraces : undefined,
     }]);
@@ -207,6 +220,80 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
     setStreamingContent('');
     setIsTyping(false);
   }, [input, isTyping, sessionId, skills]);
+
+  const handleApproval = useCallback(async (decision: 'approve' | 'reject') => {
+    if (!sessionId || !pendingInterrupt) return;
+
+    setPendingInterrupt(null);
+    let fullContent = streamingContent;
+    let rawContent = fullContent;
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 60000);
+
+    try {
+      await sendApproval(sessionId, decision, (event) => {
+        switch (event.type) {
+          case 'token':
+            rawContent += event.content;
+            fullContent = rawContent
+              .replace(/<think>[\s\S]*?<\/think>/g, '')
+              .replace(/<think>[\s\S]*$/, '')
+              .trim();
+            setStreamingContent(fullContent);
+            break;
+          case 'tool_start': {
+            const skill = skills.find(s => s.id === event.skillId);
+            setActiveToolId(event.skillId);
+            setToolCalls(prev => [...prev, { id: event.id, skillId: event.skillId, skillName: skill?.name || event.name, skillIcon: skill?.icon || event.icon, action: event.action, status: 'running', startTime: new Date(), input: event.input }]);
+            const newTrace: TraceItem = { id: event.id, name: event.action || event.name, icon: skill?.icon || event.icon, status: 'running' };
+            tracesRef.current = [...tracesRef.current, newTrace];
+            setActiveTraces(tracesRef.current);
+            break;
+          }
+          case 'tool_end':
+            setToolCalls(prev => prev.map(tc => tc.id === event.id ? { ...tc, status: 'success' as const, endTime: new Date(), duration: event.duration, output: event.output } : tc));
+            setActiveToolId(null);
+            tracesRef.current = tracesRef.current.map(t => t.id === event.id ? { ...t, status: 'done' as const, duration: event.duration } : t);
+            setActiveTraces(tracesRef.current);
+            break;
+          case 'interrupt':
+            setPendingInterrupt(event as InterruptEvent);
+            break;
+          case 'error':
+            fullContent += `\n\n⚠️ Error: ${event.message}`;
+            setStreamingContent(fullContent);
+            break;
+          case 'done':
+            break;
+        }
+      }, controller.signal);
+    } catch (err) {
+      console.error('[Chat] Approval stream error:', err);
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    // If another interrupt, don't finalize
+    if (pendingInterrupt) return;
+
+    // Finalize
+    const finalTraces = tracesRef.current.map(t => ({ ...t, status: 'done' as const }));
+    if (decision === 'reject') {
+      fullContent = fullContent || '🚫 Tool execution was rejected by the user.';
+    }
+    setMessages(prev => [...prev, {
+      id: `agent-${Date.now()}`,
+      role: 'agent',
+      content: fullContent || 'Tool executed successfully.',
+      timestamp: new Date(),
+      traces: finalTraces.length > 0 ? finalTraces : undefined,
+    }]);
+    tracesRef.current = [];
+    setActiveTraces([]);
+    setStreamingContent('');
+    setIsTyping(false);
+  }, [sessionId, pendingInterrupt, streamingContent, skills]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -290,6 +377,39 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
                     </div>
                   </motion.div>
                 ))}
+
+                {/* Human-in-the-loop approval prompt */}
+                <AnimatePresence>
+                  {pendingInterrupt && (
+                    <motion.div
+                      className="approval-prompt"
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                    >
+                      <div className="approval-header">
+                        <span className="approval-icon">⚠️</span>
+                        <span className="approval-title">Approval Required</span>
+                      </div>
+                      <div className="approval-details">
+                        {pendingInterrupt.actionRequests.map((req, i) => (
+                          <div key={i} className="approval-action">
+                            <span className="approval-tool-name">{req.name}</span>
+                            <pre className="approval-args">{JSON.stringify(req.args, null, 2)}</pre>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="approval-buttons">
+                        <button className="approval-btn approve" onClick={() => handleApproval('approve')}>
+                          ✓ Approve
+                        </button>
+                        <button className="approval-btn reject" onClick={() => handleApproval('reject')}>
+                          ✕ Reject
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {/* Live tool traces — only during active response */}
                 <AnimatePresence>

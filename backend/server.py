@@ -1,5 +1,6 @@
 """
-FastAPI server with session-based agent management and SSE streaming.
+FastAPI server with session-based agent management, SSE streaming,
+human-in-the-loop approval, and skills support.
 """
 
 import json
@@ -17,10 +18,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from sse_starlette.sse import EventSourceResponse
 from pydantic import BaseModel
 from langchain_core.messages import HumanMessage, AIMessage
+from langgraph.types import Command
 
 from agent import create_agent  # noqa: E402
 
-app = FastAPI(title="Deep Agent Backend", version="0.2.0")
+app = FastAPI(title="Deep Agent Backend", version="0.3.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -31,34 +33,60 @@ app.add_middleware(
 )
 
 
-# ── In-memory session store ──────────────────────────────────────────────────
+# ── Session store ────────────────────────────────────────────────────────────
 
 class AgentSession:
-    def __init__(self, agent, model_id: str, skill_ids: list[str]):
+    def __init__(self, agent, model_id: str, skill_ids: list[str], thread_id: str, hitl_enabled: bool):
         self.agent = agent
         self.model_id = model_id
         self.skill_ids = skill_ids
-        self.messages: list = []  # LangChain message objects
+        self.thread_id = thread_id
+        self.hitl_enabled = hitl_enabled
+        self.messages: list = []
+        self.pending_interrupt: dict | None = None  # Stores interrupt data awaiting approval
         self.created_at = time.time()
+
+    @property
+    def config(self):
+        return {"configurable": {"thread_id": self.thread_id}, "recursion_limit": 30}
 
 sessions: dict[str, AgentSession] = {}
 
 
-# ── Request/Response models ──────────────────────────────────────────────────
+# ── Request models ───────────────────────────────────────────────────────────
 
 class CreateAgentRequest(BaseModel):
     model_id: str = "llama"
     skill_ids: list[str] = []
+    hitl_enabled: bool = False
 
 class ChatRequest(BaseModel):
     message: str
 
-# Legacy request for backward compatibility
-class LegacyChatRequest(BaseModel):
-    message: str
-    skill_ids: list[str] = []
-    model_id: str = "llama"
-    history: list[dict] = []
+class ApprovalRequest(BaseModel):
+    decision: str = "approve"  # "approve" | "reject" | "edit"
+    edited_args: dict | None = None
+
+
+# ── Tool mappings ────────────────────────────────────────────────────────────
+
+ICON_MAP = {
+    "tavily_search_results_json": "🌐", "tavily_search_results": "🌐",
+    "read_file": "📖", "write_file": "✏️", "edit_file": "📝",
+    "ls": "📂", "glob": "🔍", "grep": "🔎",
+    "execute": "💻",
+    "write_todos": "📋", "read_todos": "📋",
+    "task": "🤖",
+}
+
+SKILL_ID_MAP = {
+    "tavily_search_results_json": "websearch", "tavily_search_results": "websearch",
+    "read_file": "fileio", "write_file": "fileio", "edit_file": "fileio",
+    "ls": "fileio", "glob": "fileio", "grep": "fileio",
+    "execute": "execute",
+    "write_todos": "planning", "read_todos": "planning",
+    "task": "task",
+}
 
 
 # ── Routes ───────────────────────────────────────────────────────────────────
@@ -70,13 +98,16 @@ async def health():
 
 @app.post("/api/agent")
 async def create_agent_session(request: CreateAgentRequest):
-    """Create a new agent session. Returns a session_id."""
+    """Create a new agent session."""
     try:
-        agent = create_agent(request.skill_ids, request.model_id)
         session_id = str(uuid.uuid4())[:8]
-        sessions[session_id] = AgentSession(agent, request.model_id, request.skill_ids)
-        print(f"[Session] Created {session_id} with model={request.model_id}, skills={request.skill_ids}")
-        return {"session_id": session_id}
+        thread_id = f"thread-{session_id}"
+        agent = create_agent(request.skill_ids, request.model_id, request.hitl_enabled)
+        sessions[session_id] = AgentSession(
+            agent, request.model_id, request.skill_ids, thread_id, request.hitl_enabled
+        )
+        print(f"[Session] Created {session_id} model={request.model_id} hitl={request.hitl_enabled}")
+        return {"session_id": session_id, "hitl_enabled": request.hitl_enabled}
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
@@ -87,155 +118,68 @@ async def delete_agent_session(session_id: str):
     """Destroy an agent session."""
     if session_id in sessions:
         del sessions[session_id]
-        print(f"[Session] Deleted {session_id}")
         return {"status": "deleted"}
     raise HTTPException(status_code=404, detail="Session not found")
 
 
 @app.post("/api/agent/{session_id}/chat")
 async def chat_with_session(session_id: str, request: ChatRequest):
-    """Stream a response from an existing agent session."""
+    """Stream a response from an agent session. May pause for approval if HITL is enabled."""
     session = sessions.get(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
+    session.messages.append(HumanMessage(content=request.message))
     return EventSourceResponse(_stream_response(session, request.message))
 
 
-@app.post("/api/chat")
-async def legacy_chat(request: LegacyChatRequest):
-    """Legacy endpoint — creates a one-shot agent per request."""
-    # Create a temporary session
-    agent = create_agent(request.skill_ids, request.model_id)
-    session = AgentSession(agent, request.model_id, request.skill_ids)
+@app.post("/api/agent/{session_id}/approve")
+async def approve_tool_call(session_id: str, request: ApprovalRequest):
+    """Resume an interrupted agent with approval/rejection."""
+    session = sessions.get(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    if not session.pending_interrupt:
+        raise HTTPException(status_code=400, detail="No pending interrupt")
 
-    # Add history
-    for msg in request.history:
-        role = msg.get("role", "user")
-        content = msg.get("content", "")
-        if role == "agent" or role == "assistant":
-            session.messages.append(AIMessage(content=content))
-        else:
-            session.messages.append(HumanMessage(content=content))
-
-    return EventSourceResponse(_stream_response(session, request.message))
+    return EventSourceResponse(_stream_resume(session, request.decision, request.edited_args))
 
 
-# ── Streaming helper ─────────────────────────────────────────────────────────
-
-# Map tool names to skill icons and IDs
-ICON_MAP = {
-    # Web Search
-    "tavily_search_results_json": "🌐",
-    "tavily_search_results": "🌐",
-    # File I/O (deepagents built-in)
-    "read_file": "📖",
-    "write_file": "✏️",
-    "edit_file": "📝",
-    "ls": "📂",
-    "glob": "🔍",
-    "grep": "🔎",
-    # Shell execution
-    "execute": "💻",
-    # Planning
-    "write_todos": "📋",
-    "read_todos": "📋",
-    # Sub-agents (should not fire, but map just in case)
-    "task": "🤖",
-}
-
-SKILL_ID_MAP = {
-    # Web Search
-    "tavily_search_results_json": "websearch",
-    "tavily_search_results": "websearch",
-    # File I/O
-    "read_file": "fileio",
-    "write_file": "fileio",
-    "edit_file": "fileio",
-    "ls": "fileio",
-    "glob": "fileio",
-    "grep": "fileio",
-    # Shell
-    "execute": "execute",
-    # Planning
-    "write_todos": "planning",
-    "read_todos": "planning",
-    # Sub-agents
-    "task": "task",
-}
-
+# ── Streaming helpers ────────────────────────────────────────────────────────
 
 async def _stream_response(session: AgentSession, user_message: str) -> AsyncGenerator[dict, None]:
     try:
-        # Add user message to history
-        session.messages.append(HumanMessage(content=user_message))
-
         tool_timers: dict[str, float] = {}
         full_response = ""
 
         async for event in session.agent.astream_events(
             {"messages": session.messages},
             version="v2",
-                config={"recursion_limit": 30},
+            config=session.config,
         ):
-            kind = event.get("event", "")
+            result = _process_event(event, tool_timers)
+            if result:
+                if result["event"] == "token":
+                    full_response += json.loads(result["data"])["content"]
+                yield result
 
-            # --- LLM token streaming ---
-            if kind == "on_chat_model_stream":
-                chunk = event.get("data", {}).get("chunk")
-                if chunk and hasattr(chunk, "content") and chunk.content:
-                    full_response += chunk.content
-                    yield {
-                        "event": "token",
-                        "data": json.dumps({"content": chunk.content}),
-                    }
+        # Check for interrupt
+        state = await session.agent.aget_state(session.config)
+        if state.next and state.tasks:
+            for task in state.tasks:
+                if hasattr(task, "interrupts") and task.interrupts:
+                    for intr in task.interrupts:
+                        interrupt_data = intr.value
+                        session.pending_interrupt = interrupt_data
+                        yield {
+                            "event": "interrupt",
+                            "data": json.dumps({
+                                "action_requests": interrupt_data.get("action_requests", []),
+                                "review_configs": interrupt_data.get("review_configs", []),
+                            }),
+                        }
+                        return  # Don't send done — waiting for approval
 
-            # --- Tool call start ---
-            elif kind == "on_tool_start":
-                tool_name = event.get("name", "unknown")
-                run_id = event.get("run_id", "")
-                tool_input = event.get("data", {}).get("input", "")
-                tool_timers[run_id] = time.time()
-
-                input_str = str(tool_input)
-                if len(input_str) > 200:
-                    input_str = input_str[:200] + "..."
-
-                yield {
-                    "event": "tool_start",
-                    "data": json.dumps({
-                        "id": run_id,
-                        "name": tool_name,
-                        "skillId": SKILL_ID_MAP.get(tool_name, "api"),
-                        "icon": ICON_MAP.get(tool_name, "🔧"),
-                        "action": tool_name.replace("_", " "),
-                        "input": input_str,
-                    }),
-                }
-
-            # --- Tool call end ---
-            elif kind == "on_tool_end":
-                run_id = event.get("run_id", "")
-                tool_name = event.get("name", "unknown")
-                output = event.get("data", {}).get("output", "")
-                start_time = tool_timers.pop(run_id, time.time())
-                duration_ms = int((time.time() - start_time) * 1000)
-
-                output_str = str(output)
-                if len(output_str) > 300:
-                    output_str = output_str[:300] + "..."
-
-                yield {
-                    "event": "tool_end",
-                    "data": json.dumps({
-                        "id": run_id,
-                        "name": tool_name,
-                        "output": output_str,
-                        "duration": duration_ms,
-                    }),
-                }
-
-        # Save assistant response to session history
         if full_response:
             session.messages.append(AIMessage(content=full_response))
 
@@ -243,10 +187,112 @@ async def _stream_response(session: AgentSession, user_message: str) -> AsyncGen
 
     except Exception as e:
         traceback.print_exc()
-        yield {
-            "event": "error",
-            "data": json.dumps({"message": str(e)}),
+        yield {"event": "error", "data": json.dumps({"message": str(e)})}
+
+
+async def _stream_resume(session: AgentSession, decision: str, edited_args: dict | None) -> AsyncGenerator[dict, None]:
+    try:
+        session.pending_interrupt = None
+
+        # Build decision list
+        decisions = [{"type": decision}]
+        if decision == "edit" and edited_args:
+            decisions = [{"type": "edit", "edited_action": edited_args}]
+
+        tool_timers: dict[str, float] = {}
+        full_response = ""
+
+        async for event in session.agent.astream_events(
+            Command(resume={"decisions": decisions}),
+            version="v2",
+            config=session.config,
+        ):
+            result = _process_event(event, tool_timers)
+            if result:
+                if result["event"] == "token":
+                    full_response += json.loads(result["data"])["content"]
+                yield result
+
+        # Check for another interrupt (chained)
+        state = await session.agent.aget_state(session.config)
+        if state.next and state.tasks:
+            for task in state.tasks:
+                if hasattr(task, "interrupts") and task.interrupts:
+                    for intr in task.interrupts:
+                        interrupt_data = intr.value
+                        session.pending_interrupt = interrupt_data
+                        yield {
+                            "event": "interrupt",
+                            "data": json.dumps({
+                                "action_requests": interrupt_data.get("action_requests", []),
+                                "review_configs": interrupt_data.get("review_configs", []),
+                            }),
+                        }
+                        return
+
+        if full_response:
+            session.messages.append(AIMessage(content=full_response))
+
+        yield {"event": "done", "data": "{}"}
+
+    except Exception as e:
+        traceback.print_exc()
+        yield {"event": "error", "data": json.dumps({"message": str(e)})}
+
+
+def _process_event(event: dict, tool_timers: dict[str, float]) -> dict | None:
+    """Process a single astream_events event into an SSE dict."""
+    kind = event.get("event", "")
+
+    if kind == "on_chat_model_stream":
+        chunk = event.get("data", {}).get("chunk")
+        if chunk and hasattr(chunk, "content") and chunk.content:
+            return {"event": "token", "data": json.dumps({"content": chunk.content})}
+
+    elif kind == "on_tool_start":
+        tool_name = event.get("name", "unknown")
+        run_id = event.get("run_id", "")
+        tool_input = event.get("data", {}).get("input", "")
+        tool_timers[run_id] = time.time()
+
+        input_str = str(tool_input)
+        if len(input_str) > 200:
+            input_str = input_str[:200] + "..."
+
+        return {
+            "event": "tool_start",
+            "data": json.dumps({
+                "id": run_id,
+                "name": tool_name,
+                "skillId": SKILL_ID_MAP.get(tool_name, "api"),
+                "icon": ICON_MAP.get(tool_name, "🔧"),
+                "action": tool_name.replace("_", " "),
+                "input": input_str,
+            }),
         }
+
+    elif kind == "on_tool_end":
+        run_id = event.get("run_id", "")
+        tool_name = event.get("name", "unknown")
+        output = event.get("data", {}).get("output", "")
+        start_time = tool_timers.pop(run_id, time.time())
+        duration_ms = int((time.time() - start_time) * 1000)
+
+        output_str = str(output)
+        if len(output_str) > 300:
+            output_str = output_str[:300] + "..."
+
+        return {
+            "event": "tool_end",
+            "data": json.dumps({
+                "id": run_id,
+                "name": tool_name,
+                "output": output_str,
+                "duration": duration_ms,
+            }),
+        }
+
+    return None
 
 
 if __name__ == "__main__":

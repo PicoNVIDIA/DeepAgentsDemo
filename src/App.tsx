@@ -81,7 +81,7 @@ function App() {
     try {
       const skillIds = addedSkills.map(s => s.id);
       console.log('[App] Creating agent session:', selectedModel.id, skillIds);
-      const id = await createAgentSession(selectedModel.id, skillIds);
+      const id = await createAgentSession(selectedModel.id, skillIds, true);
       console.log('[App] Session created:', id);
       setSessionId(id);
       setPhase('chat');
