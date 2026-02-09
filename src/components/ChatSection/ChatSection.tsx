@@ -27,6 +27,7 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
   const [toolCalls, setToolCalls] = useState<ToolCall[]>([]);
   const [activeToolId, setActiveToolId] = useState<string | null>(null);
   const [streamingContent, setStreamingContent] = useState('');
+  const [activeTraces, setActiveTraces] = useState<Array<{ id: string; name: string; icon: string; status: 'running' | 'done'; duration?: number }>>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -82,7 +83,10 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
     setStreamingContent('');
 
     let fullContent = '';
-    let rawContent = ''; // includes <think> blocks
+    let rawContent = '';
+
+    // Reset traces for this response
+    setActiveTraces([]);
 
     // Timeout: abort after 60s
     const controller = new AbortController();
@@ -93,10 +97,9 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
         switch (event.type) {
           case 'token':
             rawContent += event.content;
-            // Strip <think>...</think> blocks from display
             fullContent = rawContent
               .replace(/<think>[\s\S]*?<\/think>/g, '')
-              .replace(/<think>[\s\S]*$/, '') // partial open think block
+              .replace(/<think>[\s\S]*$/, '')
               .trim();
             setStreamingContent(fullContent);
             break;
@@ -104,6 +107,8 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
           case 'tool_start': {
             const skill = skills.find(s => s.id === event.skillId);
             setActiveToolId(event.skillId);
+
+            // Add to tool calls panel
             setToolCalls(prev => [...prev, {
               id: event.id,
               skillId: event.skillId,
@@ -113,6 +118,14 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
               status: 'running',
               startTime: new Date(),
               input: event.input,
+            }]);
+
+            // Add inline trace
+            setActiveTraces(prev => [...prev, {
+              id: event.id,
+              name: event.action || event.name,
+              icon: skill?.icon || event.icon,
+              status: 'running',
             }]);
             break;
           }
@@ -130,6 +143,13 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
                 : tc
             ));
             setActiveToolId(null);
+
+            // Update inline trace
+            setActiveTraces(prev => prev.map(t =>
+              t.id === event.id
+                ? { ...t, status: 'done' as const, duration: event.duration }
+                : t
+            ));
             break;
 
           case 'error':
@@ -236,6 +256,39 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
                     </div>
                   </motion.div>
                 ))}
+
+                {/* Tool trace notifications */}
+                <AnimatePresence>
+                  {activeTraces.length > 0 && (
+                    <motion.div
+                      className="tool-traces"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                    >
+                      {activeTraces.map((trace) => (
+                        <motion.div
+                          key={trace.id}
+                          className={`tool-trace ${trace.status}`}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          layout
+                        >
+                          <span className="trace-icon">{trace.icon}</span>
+                          <span className="trace-name">{trace.name}</span>
+                          {trace.status === 'running' ? (
+                            <span className="trace-spinner" />
+                          ) : (
+                            <span className="trace-check">✓</span>
+                          )}
+                          {trace.duration !== undefined && (
+                            <span className="trace-duration">{trace.duration}ms</span>
+                          )}
+                        </motion.div>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {/* Streaming content */}
                 {streamingContent && (

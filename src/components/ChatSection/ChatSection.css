@@ -312,6 +312,73 @@
   text-align: center;
 }
 
+/* Tool traces — inline notifications above the response */
+.tool-traces {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 0 var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.tool-trace {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-elevated);
+  border-left: 3px solid var(--accent-color);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.tool-trace.running {
+  border-left-color: var(--accent-color);
+}
+
+.tool-trace.done {
+  border-left-color: var(--accent-color);
+  opacity: 0.7;
+}
+
+.trace-icon {
+  font-size: 0.9rem;
+}
+
+.trace-name {
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  font-family: var(--font-family-mono);
+  font-size: var(--text-xs);
+}
+
+.trace-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--accent-subtle);
+  border-top-color: var(--accent-color);
+  border-radius: 50%;
+  animation: trace-spin 0.8s linear infinite;
+}
+
+@keyframes trace-spin {
+  to { transform: rotate(360deg); }
+}
+
+.trace-check {
+  color: var(--accent-color);
+  font-weight: var(--font-bold);
+  font-size: var(--text-xs);
+}
+
+.trace-duration {
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  color: var(--text-tertiary);
+  margin-left: auto;
+}
+
 /* Streaming cursor */
 .message-text.streaming {
   position: relative;
