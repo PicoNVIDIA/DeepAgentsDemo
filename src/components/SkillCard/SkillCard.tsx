@@ -45,6 +45,7 @@ export function SkillCard({ skill, isInPalette = true }: SkillCardProps) {
         {skill.category.toUpperCase()}
       </div>
       <div className="skill-card-glow" />
+      <div className="skill-card-tooltip">{skill.description}</div>
     </motion.div>
   );
 }

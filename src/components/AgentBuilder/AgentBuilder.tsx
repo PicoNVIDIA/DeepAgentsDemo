@@ -104,6 +104,7 @@ export function AgentBuilder({ skills, isBuilding, isReady, onRemoveSkill }: Age
                   exit={{ scale: 0 }}
                   whileHover={{ scale: 1.05 }}
                   layout
+                  title={skill.description}
                 >
                   <span className="chip-icon">{skill.icon}</span>
                   <span className="chip-name">{skill.name}</span>

@@ -333,6 +333,7 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
                     {skills.slice(0, 4).map(skill => (
                       <span key={skill.id} className="skill-tag">
                         {skill.icon} {skill.name}
+                        <span className="skill-tooltip">{skill.description}</span>
                       </span>
                     ))}
                     {skills.length > 4 && (
