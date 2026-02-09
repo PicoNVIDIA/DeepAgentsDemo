@@ -386,6 +386,136 @@
   margin-left: auto;
 }
 
+/* Markdown styling for agent messages */
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4 {
+  color: var(--text-primary);
+  margin: var(--space-3) 0 var(--space-2);
+  line-height: var(--leading-tight);
+}
+
+.markdown-body h1 { font-size: var(--text-lg); }
+.markdown-body h2 { font-size: var(--text-ml); }
+.markdown-body h3 { font-size: var(--text-md); font-weight: var(--font-semibold); color: var(--accent-color); }
+.markdown-body h4 { font-size: var(--text-sm); font-weight: var(--font-semibold); }
+
+.markdown-body p {
+  margin: 0 0 var(--space-2);
+}
+
+.markdown-body p:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  margin: var(--space-2) 0;
+  padding-left: var(--space-5);
+}
+
+.markdown-body li {
+  margin-bottom: var(--space-1);
+}
+
+.markdown-body li::marker {
+  color: var(--accent-color);
+}
+
+.markdown-body strong {
+  color: var(--text-primary);
+  font-weight: var(--font-semibold);
+}
+
+.markdown-body em {
+  color: var(--text-secondary);
+}
+
+.markdown-body code {
+  font-family: var(--font-family-mono);
+  font-size: 0.85em;
+  background: var(--bg-surface);
+  color: var(--accent-color);
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+}
+
+.markdown-body pre {
+  margin: var(--space-3) 0;
+  padding: var(--space-3);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+}
+
+.markdown-body pre code {
+  background: none;
+  padding: 0;
+  color: var(--text-primary);
+  font-size: var(--text-xs);
+  line-height: 1.6;
+}
+
+.markdown-body blockquote {
+  border-left: 3px solid var(--accent-color);
+  margin: var(--space-3) 0;
+  padding: var(--space-2) var(--space-4);
+  background: var(--bg-surface);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  color: var(--text-secondary);
+}
+
+.markdown-body a {
+  color: var(--accent-color);
+  text-decoration: none;
+}
+
+.markdown-body a:hover {
+  text-decoration: underline;
+}
+
+.markdown-body hr {
+  border: none;
+  border-top: 1px solid var(--border-default);
+  margin: var(--space-4) 0;
+}
+
+.markdown-body table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: var(--space-3) 0;
+  font-size: var(--text-xs);
+}
+
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid var(--border-default);
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+}
+
+.markdown-body th {
+  background: var(--bg-surface);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+}
+
+/* User messages — simpler markdown */
+.message.user .markdown-body h1,
+.message.user .markdown-body h2,
+.message.user .markdown-body h3,
+.message.user .markdown-body h4,
+.message.user .markdown-body strong {
+  color: var(--text-inverse);
+}
+
+.message.user .markdown-body code {
+  background: rgba(255,255,255,0.15);
+  color: var(--text-inverse);
+}
+
 /* Streaming cursor */
 .message-text.streaming {
   position: relative;

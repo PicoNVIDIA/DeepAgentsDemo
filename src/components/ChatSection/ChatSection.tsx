@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import type { Skill } from '../../data/skills';
 import type { ToolCall } from '../ToolCallsPanel';
 import { ToolCallsPanel } from '../ToolCallsPanel';
@@ -279,10 +281,8 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
                           ))}
                         </div>
                       )}
-                      <div className="message-text">
-                        {message.content.split('\n').map((line, i) => (
-                          <p key={i}>{line.replace(/\*\*(.*?)\*\*/g, (_: string, text: string) => text)}</p>
-                        ))}
+                      <div className="message-text markdown-body">
+                        <Markdown remarkPlugins={[remarkGfm]}>{message.content}</Markdown>
                       </div>
                       <div className="message-time">
                         {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -333,10 +333,8 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
                   >
                     <div className="message-avatar">🤖</div>
                     <div className="message-content">
-                      <div className="message-text streaming">
-                        {streamingContent.split('\n').map((line, i) => (
-                          <p key={i}>{line}</p>
-                        ))}
+                      <div className="message-text markdown-body streaming">
+                        <Markdown remarkPlugins={[remarkGfm]}>{streamingContent}</Markdown>
                         <span className="cursor-blink">▊</span>
                       </div>
                     </div>
