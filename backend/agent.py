@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from deepagents import create_deep_agent
-from deepagents.backends import FilesystemBackend
+from deepagents.backends import FilesystemBackend, LocalShellBackend, CompositeBackend
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_nvidia_ai_endpoints import ChatNVIDIA
 
@@ -115,6 +115,8 @@ def _build_system_prompt(skill_ids: list[str], model_id: str, hitl_enabled: bool
         enabled.append("- Web Search (tavily_search_results_json): search the internet")
     if "fileio" in skill_ids:
         enabled.append("- File I/O (read_file, write_file, edit_file, ls, glob, grep): manage files")
+    if "execute" in skill_ids:
+        enabled.append("- Shell Execution (execute): run shell commands, Python scripts, and system tools")
     if "superpowers" in skill_ids:
         enabled.append("- Superpowers: agentic software development methodology (TDD, planning, debugging)")
 
@@ -161,8 +163,19 @@ def create_agent(
     model = _get_model(model_id)
     extra_tools = _build_extra_tools(skill_ids)
     system_prompt = _build_system_prompt(skill_ids, model_id, hitl_enabled)
-    backend = FilesystemBackend(root_dir=WORKSPACE_DIR)
     skill_sources = _get_skill_sources()
+
+    # Build backend: LocalShellBackend includes file ops + execute
+    if "execute" in skill_ids:
+        backend = LocalShellBackend(
+            root_dir=WORKSPACE_DIR,
+            timeout=60.0,
+            max_output_bytes=50000,
+            inherit_env=True,
+        )
+        print("[Agent] Shell execution enabled via LocalShellBackend")
+    else:
+        backend = FilesystemBackend(root_dir=WORKSPACE_DIR)
 
     agent_kwargs: dict = {
         "model": model,

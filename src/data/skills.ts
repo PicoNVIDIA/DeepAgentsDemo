@@ -22,6 +22,13 @@ export const skills: Skill[] = [
     category: 'tools',
     icon: '📁',
   },
+  {
+    id: 'execute',
+    name: 'Shell Execution',
+    description: 'Run shell commands, Python scripts & system tools',
+    category: 'tools',
+    icon: '💻',
+  },
   // Skills (loaded as methodology/instructions)
   {
     id: 'superpowers',
@@ -34,7 +41,6 @@ export const skills: Skill[] = [
 
 // Coming soon — will be wired to real backends (MCP, skills, etc.)
 export const comingSoonSkills: Array<{ name: string; icon: string; description: string }> = [
-  { name: 'Code Execution', icon: '💻', description: 'Run shell commands & scripts' },
   { name: 'RAG', icon: '📚', description: 'Retrieval-augmented generation' },
   { name: 'API Access', icon: '🔌', description: 'Connect to external services' },
   { name: 'Database', icon: '🗄️', description: 'Query structured data' },
