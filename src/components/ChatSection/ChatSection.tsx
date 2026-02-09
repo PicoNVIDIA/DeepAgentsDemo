@@ -41,7 +41,8 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
   const [streamingContent, setStreamingContent] = useState('');
   const [activeTraces, setActiveTraces] = useState<TraceItem[]>([]);
   const tracesRef = useRef<TraceItem[]>([]);
-  const [pendingInterrupt, setPendingInterrupt] = useState<InterruptEvent | null>(null); // ref copy for capturing into messages
+  const [pendingInterrupt, setPendingInterrupt] = useState<InterruptEvent | null>(null);
+  const interruptRef = useRef<boolean>(false); // ref copy for capturing into messages
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -99,9 +100,11 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
     let fullContent = '';
     let rawContent = '';
 
-    // Reset traces for this response
+    // Reset traces and interrupt state for this response
     tracesRef.current = [];
     setActiveTraces([]);
+    interruptRef.current = false;
+    setPendingInterrupt(null);
 
     // Timeout: abort after 60s
     const controller = new AbortController();
@@ -176,6 +179,7 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
             break;
 
           case 'interrupt':
+            interruptRef.current = true;
             setPendingInterrupt(event as InterruptEvent);
             break;
 
@@ -195,15 +199,14 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
       clearTimeout(timeout);
     }
 
+    // If interrupted, keep typing state — we'll resume after approval
+    if (interruptRef.current) {
+      return;
+    }
+
     // Finalize the streamed message — embed traces into the message
     if (!fullContent) {
       fullContent = '⚠️ No response received from the agent. The backend may need to be restarted.';
-    }
-    // If interrupted, keep typing state — we'll resume after approval
-    if (pendingInterrupt) {
-      // Show what we have so far, but keep isTyping true
-      if (fullContent) setStreamingContent(fullContent);
-      return;
     }
 
     // Capture traces from ref (always up-to-date, unlike state)
