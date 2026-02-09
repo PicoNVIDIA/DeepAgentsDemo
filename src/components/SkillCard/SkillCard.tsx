@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { motion } from 'framer-motion';
@@ -14,12 +15,20 @@ export function SkillCard({ skill, isInPalette = true }: SkillCardProps) {
     id: skill.id,
     data: skill,
   });
+  const tooltipRef = useRef<HTMLDivElement>(null);
 
   const style = transform
     ? {
         transform: CSS.Translate.toString(transform),
       }
     : undefined;
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (tooltipRef.current) {
+      tooltipRef.current.style.left = `${e.clientX + 12}px`;
+      tooltipRef.current.style.top = `${e.clientY - 10}px`;
+    }
+  };
 
   return (
     <motion.div
@@ -33,6 +42,7 @@ export function SkillCard({ skill, isInPalette = true }: SkillCardProps) {
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
       layout
+      onMouseMove={handleMouseMove}
     >
       <div className="skill-card-icon">{skill.icon}</div>
       <div className="skill-card-content">
@@ -45,7 +55,7 @@ export function SkillCard({ skill, isInPalette = true }: SkillCardProps) {
         {skill.category.toUpperCase()}
       </div>
       <div className="skill-card-glow" />
-      <div className="skill-card-tooltip">{skill.description}</div>
+      <div className="skill-card-tooltip" ref={tooltipRef}>{skill.description}</div>
     </motion.div>
   );
 }
