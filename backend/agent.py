@@ -77,6 +77,28 @@ def _build_extra_tools(skill_ids: list[str]) -> list:
     return tools
 
 
+def _load_skill_content(skill_ids: list[str]) -> str:
+    """Load skill markdown files based on selected skills."""
+    skill_content = []
+
+    # Map skill IDs to skill files
+    skill_files = {
+        "superpowers": "superpowers.md",
+    }
+
+    for sid in skill_ids:
+        filename = skill_files.get(sid)
+        if filename:
+            filepath = os.path.join(SKILLS_DIR, filename)
+            if os.path.exists(filepath):
+                with open(filepath, "r") as f:
+                    content = f.read()
+                    skill_content.append(content)
+                    print(f"[Agent] Loaded skill: {filename}")
+
+    return "\n\n---\n\n".join(skill_content)
+
+
 def _get_skill_sources() -> list[str]:
     """Get list of skill source directories if any skills exist."""
     if os.path.exists(SKILLS_DIR) and os.listdir(SKILLS_DIR):
@@ -85,7 +107,7 @@ def _get_skill_sources() -> list[str]:
 
 
 def _build_system_prompt(skill_ids: list[str], model_id: str, hitl_enabled: bool) -> str:
-    """Create a system prompt that includes the selected capabilities."""
+    """Create a system prompt that includes the selected capabilities and skills."""
     model_name = MODEL_DISPLAY_NAMES.get(model_id, "AI Model")
 
     enabled = []
@@ -93,6 +115,8 @@ def _build_system_prompt(skill_ids: list[str], model_id: str, hitl_enabled: bool
         enabled.append("- Web Search (tavily_search_results_json): search the internet")
     if "fileio" in skill_ids:
         enabled.append("- File I/O (read_file, write_file, edit_file, ls, glob, grep): manage files")
+    if "superpowers" in skill_ids:
+        enabled.append("- Superpowers: agentic software development methodology (TDD, planning, debugging)")
 
     builtin = ["- Planning (write_todos): organize tasks"]
     all_capabilities = enabled + builtin if enabled else builtin
@@ -104,6 +128,10 @@ def _build_system_prompt(skill_ids: list[str], model_id: str, hitl_enabled: bool
 NOTE: Some tools (write_file, edit_file, execute) require human approval.
 The user will be asked to approve, edit, or reject your tool calls before they execute.
 Continue normally after approval — do not ask the user to approve manually."""
+
+    # Load skill content if any skills are selected
+    skill_content = _load_skill_content(skill_ids)
+    skill_section = f"\n\n---\n\n{skill_content}" if skill_content else ""
 
     return f"""You are an NVIDIA Deep Agent — a powerful AI assistant built for GTC 2026.
 Your soul (foundation model) is: {model_name}
@@ -118,7 +146,7 @@ CRITICAL RULES:
 3. Use web search when the user asks for current information.
 4. Be concise and technically accurate.
 5. You are running on NVIDIA infrastructure.
-{hitl_note}"""
+{hitl_note}{skill_section}"""
 
 
 def create_agent(

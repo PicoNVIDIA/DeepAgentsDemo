@@ -22,6 +22,14 @@ export const skills: Skill[] = [
     category: 'tools',
     icon: '📁',
   },
+  // Skills (loaded as methodology/instructions)
+  {
+    id: 'superpowers',
+    name: 'Superpowers',
+    description: 'TDD, planning & debugging methodology',
+    category: 'skills',
+    icon: '⚡',
+  },
 ];
 
 // Coming soon — will be wired to real backends (MCP, skills, etc.)
