@@ -186,3 +186,40 @@
   background: var(--r500);
   color: var(--text-primary);
 }
+
+.added-skill-chip .chip-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-primary);
+  border: 1px solid var(--accent-color);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+  z-index: var(--z-tooltip);
+  box-shadow: var(--shadow-glow);
+}
+
+.added-skill-chip .chip-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--accent-color);
+}
+
+.added-skill-chip:hover .chip-tooltip {
+  opacity: 1;
+}
+
+.added-skill-chip {
+  position: relative;
+}
