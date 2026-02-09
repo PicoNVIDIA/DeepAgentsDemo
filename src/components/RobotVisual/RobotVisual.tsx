@@ -18,7 +18,7 @@ export function RobotVisual({ skills, isBuilding, isReady, accentColor = '#76B90
       {/* Ambient glow behind robot */}
       <div className={`robot-ambient-glow ${hasSkills ? 'active' : ''}`} />
       
-      {/* Main robot SVG */}
+      {/* Main robot SVG — idle float animation */}
       <motion.svg
         className="robot-svg"
         viewBox="0 0 200 280"
@@ -26,9 +26,16 @@ export function RobotVisual({ skills, isBuilding, isReady, accentColor = '#76B90
         animate={{ 
           opacity: 1, 
           scale: 1,
-          filter: isBuilding ? 'drop-shadow(0 0 30px rgba(118, 185, 0, 0.8))' : 'none'
+          y: isBuilding ? 0 : [0, -6, 0],
+          rotate: isBuilding ? 0 : [0, 1, 0, -1, 0],
+          filter: isBuilding ? `drop-shadow(0 0 30px ${c})` : 'none',
         }}
-        transition={{ duration: 0.6, ease: 'easeOut' }}
+        transition={{ 
+          duration: 0.6, 
+          ease: 'easeOut',
+          y: { duration: 3, repeat: Infinity, ease: 'easeInOut' },
+          rotate: { duration: 5, repeat: Infinity, ease: 'easeInOut' },
+        }}
       >
         {/* Definitions for gradients and filters */}
         <defs>
@@ -57,8 +64,18 @@ export function RobotVisual({ skills, isBuilding, isReady, accentColor = '#76B90
           </filter>
         </defs>
 
-        {/* Robot Head */}
-        <g className="robot-head">
+        {/* Robot Head — bobs up and down */}
+        <motion.g
+          className="robot-head"
+          animate={!isBuilding ? {
+            y: [0, -3, 0, -2, 0],
+          } : { y: 0 }}
+          transition={{
+            duration: 4,
+            repeat: Infinity,
+            ease: 'easeInOut',
+          }}
+        >
           {/* Head base */}
           <rect
             x="50"
@@ -86,31 +103,52 @@ export function RobotVisual({ skills, isBuilding, isReady, accentColor = '#76B90
             />
           </motion.g>
 
-          {/* Eyes */}
-          <motion.g
-            animate={isBuilding ? { opacity: [1, 0.5, 1] } : {}}
-            transition={{ duration: 0.3, repeat: Infinity }}
-          >
-            <ellipse
+          {/* Eyes — blink idle animation */}
+          <g>
+            <motion.ellipse
               cx="75"
               cy="50"
               rx="12"
-              ry="15"
               fill={hasSkills ? c : '#333'}
               filter={hasSkills ? 'url(#glow)' : 'none'}
+              animate={isBuilding
+                ? { ry: [15, 8, 15], opacity: [1, 0.5, 1] }
+                : { ry: [15, 15, 15, 1, 15, 15, 15, 15, 15, 1, 1, 15] }
+              }
+              transition={isBuilding
+                ? { duration: 0.3, repeat: Infinity }
+                : { duration: 5, repeat: Infinity, ease: 'easeInOut', times: [0, 0.3, 0.38, 0.4, 0.42, 0.6, 0.78, 0.8, 0.81, 0.82, 0.84, 0.86] }
+              }
             />
-            <ellipse
+            <motion.ellipse
               cx="125"
               cy="50"
               rx="12"
-              ry="15"
               fill={hasSkills ? c : '#333'}
               filter={hasSkills ? 'url(#glow)' : 'none'}
+              animate={isBuilding
+                ? { ry: [15, 8, 15], opacity: [1, 0.5, 1] }
+                : { ry: [15, 15, 15, 1, 15, 15, 15, 15, 15, 1, 1, 15] }
+              }
+              transition={isBuilding
+                ? { duration: 0.3, repeat: Infinity }
+                : { duration: 5, repeat: Infinity, ease: 'easeInOut', times: [0, 0.3, 0.38, 0.4, 0.42, 0.6, 0.78, 0.8, 0.81, 0.82, 0.84, 0.86] }
+              }
             />
-            {/* Eye highlights */}
-            <ellipse cx="78" cy="46" rx="4" ry="5" fill="rgba(255,255,255,0.3)" />
-            <ellipse cx="128" cy="46" rx="4" ry="5" fill="rgba(255,255,255,0.3)" />
-          </motion.g>
+            {/* Eye highlights — hide during blink */}
+            <motion.ellipse
+              cx="78" cy="46" rx="4"
+              fill="rgba(255,255,255,0.3)"
+              animate={isBuilding ? {} : { ry: [5, 5, 5, 0, 5, 5, 5, 5, 5, 0, 0, 5] }}
+              transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', times: [0, 0.3, 0.38, 0.4, 0.42, 0.6, 0.78, 0.8, 0.81, 0.82, 0.84, 0.86] }}
+            />
+            <motion.ellipse
+              cx="128" cy="46" rx="4"
+              fill="rgba(255,255,255,0.3)"
+              animate={isBuilding ? {} : { ry: [5, 5, 5, 0, 5, 5, 5, 5, 5, 0, 0, 5] }}
+              transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', times: [0, 0.3, 0.38, 0.4, 0.42, 0.6, 0.78, 0.8, 0.81, 0.82, 0.84, 0.86] }}
+            />
+          </g>
 
           {/* Mouth/Speaker */}
           <rect
@@ -123,7 +161,7 @@ export function RobotVisual({ skills, isBuilding, isReady, accentColor = '#76B90
             stroke={hasSkills ? c : '#444'}
             strokeWidth="1"
           />
-        </g>
+        </motion.g>
 
         {/* Neck */}
         <rect x="85" y="90" width="30" height="15" fill="#2a2a2a" />
@@ -220,15 +258,39 @@ export function RobotVisual({ skills, isBuilding, isReady, accentColor = '#76B90
           </g>
         </g>
 
-        {/* Arms */}
+        {/* Arms — sway back and forth */}
         <g className="robot-arms">
           {/* Left arm */}
-          <rect x="20" y="110" width="18" height="60" rx="8" fill="url(#bodyGradient)" stroke="#444" strokeWidth="2" />
-          <circle cx="29" cy="175" r="10" fill="#2a2a2a" stroke="#444" strokeWidth="2" />
+          <motion.g
+            animate={!isBuilding ? {
+              rotate: [0, 3, 0, -3, 0],
+            } : { rotate: 0 }}
+            transition={{
+              duration: 3.5,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+            style={{ transformOrigin: '29px 110px' }}
+          >
+            <rect x="20" y="110" width="18" height="60" rx="8" fill="url(#bodyGradient)" stroke="#444" strokeWidth="2" />
+            <circle cx="29" cy="175" r="10" fill="#2a2a2a" stroke="#444" strokeWidth="2" />
+          </motion.g>
           
-          {/* Right arm */}
-          <rect x="162" y="110" width="18" height="60" rx="8" fill="url(#bodyGradient)" stroke="#444" strokeWidth="2" />
-          <circle cx="171" cy="175" r="10" fill="#2a2a2a" stroke="#444" strokeWidth="2" />
+          {/* Right arm — sways opposite to left */}
+          <motion.g
+            animate={!isBuilding ? {
+              rotate: [0, -3, 0, 3, 0],
+            } : { rotate: 0 }}
+            transition={{
+              duration: 3.5,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+            style={{ transformOrigin: '171px 110px' }}
+          >
+            <rect x="162" y="110" width="18" height="60" rx="8" fill="url(#bodyGradient)" stroke="#444" strokeWidth="2" />
+            <circle cx="171" cy="175" r="10" fill="#2a2a2a" stroke="#444" strokeWidth="2" />
+          </motion.g>
         </g>
 
         {/* Legs */}
@@ -310,7 +372,7 @@ export function RobotVisual({ skills, isBuilding, isReady, accentColor = '#76B90
         <AnimatePresence>
           {skills.slice(0, 8).map((skill, index) => {
             const angle = (index / Math.min(skills.length, 8)) * Math.PI * 2 - Math.PI / 2;
-            const radius = 170;
+            const radius = 220;
             const xPos = Math.cos(angle) * radius;
             const yPos = Math.sin(angle) * radius;
             

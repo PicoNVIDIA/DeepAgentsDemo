@@ -10,8 +10,8 @@
 
 .robot-ambient-glow {
   position: absolute;
-  width: 300px;
-  height: 300px;
+  width: 400px;
+  height: 400px;
   border-radius: 50%;
   background: radial-gradient(
     circle,
@@ -66,8 +66,8 @@
 }
 
 .robot-svg {
-  width: 200px;
-  height: 280px;
+  width: 260px;
+  height: 364px;
   z-index: 1;
 }
 
@@ -110,8 +110,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-1);
-  padding: var(--space-2) var(--space-3);
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
   background: var(--bg-elevated);
   border: 1px solid var(--accent-color);
   border-radius: var(--radius-md);
@@ -120,11 +120,11 @@
 }
 
 .robot-skill-badge .badge-icon {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
 }
 
 .robot-skill-badge .badge-name {
-  font-size: var(--text-xs);
+  font-size: var(--text-sm);
   font-weight: var(--font-semibold);
   color: var(--text-primary);
 }
