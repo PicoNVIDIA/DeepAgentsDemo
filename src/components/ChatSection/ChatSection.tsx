@@ -6,11 +6,20 @@ import { ToolCallsPanel } from '../ToolCallsPanel';
 import { sendMessage } from '../../api/agent';
 import './ChatSection.css';
 
+interface TraceItem {
+  id: string;
+  name: string;
+  icon: string;
+  status: 'running' | 'done';
+  duration?: number;
+}
+
 interface Message {
   id: string;
   role: 'user' | 'agent';
   content: string;
   timestamp: Date;
+  traces?: TraceItem[];
 }
 
 interface ChatSectionProps {
@@ -27,7 +36,7 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
   const [toolCalls, setToolCalls] = useState<ToolCall[]>([]);
   const [activeToolId, setActiveToolId] = useState<string | null>(null);
   const [streamingContent, setStreamingContent] = useState('');
-  const [activeTraces, setActiveTraces] = useState<Array<{ id: string; name: string; icon: string; status: 'running' | 'done'; duration?: number }>>([]);
+  const [activeTraces, setActiveTraces] = useState<TraceItem[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -173,16 +182,20 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
       clearTimeout(timeout);
     }
 
-    // Finalize the streamed message
+    // Finalize the streamed message — embed traces into the message
     if (!fullContent) {
       fullContent = '⚠️ No response received from the agent. The backend may need to be restarted.';
     }
+    // Capture current traces before clearing
+    const finalTraces = [...activeTraces.map(t => ({ ...t, status: 'done' as const }))];
     setMessages(prev => [...prev, {
       id: `agent-${Date.now()}`,
       role: 'agent',
       content: fullContent,
       timestamp: new Date(),
+      traces: finalTraces.length > 0 ? finalTraces : undefined,
     }]);
+    setActiveTraces([]);
     setStreamingContent('');
     setIsTyping(false);
   }, [input, isTyping, sessionId, skills]);
@@ -245,6 +258,21 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
                       {message.role === 'agent' ? '🤖' : '👤'}
                     </div>
                     <div className="message-content">
+                      {/* Saved traces — show above the response text */}
+                      {message.traces && message.traces.length > 0 && (
+                        <div className="tool-traces saved">
+                          {message.traces.map((trace) => (
+                            <div key={trace.id} className="tool-trace done">
+                              <span className="trace-icon">{trace.icon}</span>
+                              <span className="trace-name">{trace.name}</span>
+                              <span className="trace-check">✓</span>
+                              {trace.duration !== undefined && (
+                                <span className="trace-duration">{trace.duration}ms</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                       <div className="message-text">
                         {message.content.split('\n').map((line, i) => (
                           <p key={i}>{line.replace(/\*\*(.*?)\*\*/g, (_: string, text: string) => text)}</p>
@@ -257,11 +285,11 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
                   </motion.div>
                 ))}
 
-                {/* Tool trace notifications */}
+                {/* Live tool traces — only during active response */}
                 <AnimatePresence>
-                  {activeTraces.length > 0 && (
+                  {isTyping && activeTraces.length > 0 && (
                     <motion.div
-                      className="tool-traces"
+                      className="tool-traces live"
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
