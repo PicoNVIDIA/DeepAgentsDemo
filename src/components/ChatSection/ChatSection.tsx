@@ -37,6 +37,7 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
   const [activeToolId, setActiveToolId] = useState<string | null>(null);
   const [streamingContent, setStreamingContent] = useState('');
   const [activeTraces, setActiveTraces] = useState<TraceItem[]>([]);
+  const tracesRef = useRef<TraceItem[]>([]); // ref copy for capturing into messages
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -95,6 +96,7 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
     let rawContent = '';
 
     // Reset traces for this response
+    tracesRef.current = [];
     setActiveTraces([]);
 
     // Timeout: abort after 60s
@@ -129,13 +131,15 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
               input: event.input,
             }]);
 
-            // Add inline trace
-            setActiveTraces(prev => [...prev, {
+            // Add inline trace (state + ref)
+            const newTrace: TraceItem = {
               id: event.id,
               name: event.action || event.name,
               icon: skill?.icon || event.icon,
               status: 'running',
-            }]);
+            };
+            tracesRef.current = [...tracesRef.current, newTrace];
+            setActiveTraces(tracesRef.current);
             break;
           }
 
@@ -153,12 +157,13 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
             ));
             setActiveToolId(null);
 
-            // Update inline trace
-            setActiveTraces(prev => prev.map(t =>
+            // Update inline trace (state + ref)
+            tracesRef.current = tracesRef.current.map(t =>
               t.id === event.id
                 ? { ...t, status: 'done' as const, duration: event.duration }
                 : t
-            ));
+            );
+            setActiveTraces(tracesRef.current);
             break;
 
           case 'error':
@@ -186,8 +191,8 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
     if (!fullContent) {
       fullContent = '⚠️ No response received from the agent. The backend may need to be restarted.';
     }
-    // Capture current traces before clearing
-    const finalTraces = [...activeTraces.map(t => ({ ...t, status: 'done' as const }))];
+    // Capture traces from ref (always up-to-date, unlike state)
+    const finalTraces = tracesRef.current.map(t => ({ ...t, status: 'done' as const }));
     setMessages(prev => [...prev, {
       id: `agent-${Date.now()}`,
       role: 'agent',
@@ -195,6 +200,7 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
       timestamp: new Date(),
       traces: finalTraces.length > 0 ? finalTraces : undefined,
     }]);
+    tracesRef.current = [];
     setActiveTraces([]);
     setStreamingContent('');
     setIsTyping(false);
