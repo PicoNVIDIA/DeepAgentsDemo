@@ -37,6 +37,13 @@ export const skills: Skill[] = [
     category: 'skills',
     icon: '⚡',
   },
+  {
+    id: 'cudf',
+    name: 'cuDF',
+    description: 'GPU-accelerated DataFrames (NVIDIA RAPIDS)',
+    category: 'skills',
+    icon: '🟩',
+  },
 ];
 
 // Coming soon — will be wired to real backends (MCP, skills, etc.)

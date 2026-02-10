@@ -84,6 +84,7 @@ def _load_skill_content(skill_ids: list[str]) -> str:
     # Map skill IDs to skill files
     skill_files = {
         "superpowers": "superpowers.md",
+        "cudf": "cudf.md",
     }
 
     for sid in skill_ids:
