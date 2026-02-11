@@ -205,7 +205,7 @@ function App() {
           {activeSkill && (
             <div className="drag-overlay-card">
               <SkillCard skill={activeSkill} isInPalette={false} />
-            </div>
+      </div>
           )}
         </DragOverlay>
       </div>

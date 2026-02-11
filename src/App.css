@@ -89,7 +89,7 @@
   transform: rotate(3deg);
   opacity: 0.95;
   pointer-events: none;
-}
+  }
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
@@ -103,12 +103,12 @@
     max-height: 200px;
     border-right: none;
     border-bottom: 1px solid var(--border-default);
-  }
+}
 
   .skill-palette-content {
     flex-direction: row;
     flex-wrap: wrap;
-  }
+}
 
   .skill-category {
     flex: 1;
