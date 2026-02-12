@@ -1,19 +1,5 @@
 # Blocky Bits Integration Notes
 
-Hey Ryan! Here's what we set up on our side to connect to your blocky-bits API.
-
-## What we built
-
-We added a "Visual Mode" toggle to the agent builder. When it's turned on, our app polls your `/workspace` endpoint every second and uses whatever blocks you detect to automatically configure the agent.
-
-Two things happen:
-- **Model blocks** → auto-select the foundation model (skips the model picker screen entirely)
-- **Skill blocks** → auto-add tools to the agent builder
-
-So the idea is: the user places physical blocks on the workspace, and the UI updates in real time to match.
-
-## How it works on our side
-
 There's a React hook (`src/hooks/useBlockyBits.ts`) that hits `GET /blocks/workspace` through a Vite proxy (we proxy `/blocks/*` → `localhost:1234`). It parses your response and maps block names to our internal IDs.
 
 Here are the current mappings — **these will need updating once you finalize your block names**:
@@ -66,13 +52,7 @@ If you name your blocks to match these IDs directly (like a block called "websea
 
 When a model block appears, our soul picker auto-selects and moves to the builder. When skill blocks appear, they auto-add to the agent.
 
-## Things to figure out together
-
-- **Block names**: What are you calling the final blocks? I'll update the mappings to match.
-- **Auto-build**: Right now the user still has to click "Build" after blocks are placed. Should we auto-trigger build after a delay? Or do you want a specific "build" block?
-- **Python 3.14 issue**: We hit a pydantic + Python 3.14 beta compat error when trying to run blocky-bits locally. Might need to pin pydantic or wait for a fix. The debug UI at `/debug` would help us test in the meantime.
-
-## Files we changed
+## Files i changed
 
 - `src/hooks/useBlockyBits.ts` — the polling hook (this is the main thing)
 - `src/App.tsx` — wired the hook in, added the mode toggle
