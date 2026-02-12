@@ -1,10 +1,11 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { DndContext, DragOverlay } from '@dnd-kit/core';
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { motion, AnimatePresence } from 'framer-motion';
 import { skills as allSkills, type Skill } from './data/skills';
-import type { ModelDef } from './data/models';
+import { models, type ModelDef } from './data/models';
 import { createAgentSession, deleteAgentSession } from './api/agent';
+import { useBlockyBits } from './hooks/useBlockyBits';
 import { SoulPicker } from './components/SoulPicker';
 import { SkillPalette } from './components/SkillPalette';
 import { AgentBuilder } from './components/AgentBuilder';
@@ -16,13 +17,20 @@ import { SkillCard } from './components/SkillCard';
 import './App.css';
 
 type Phase = 'soul' | 'builder' | 'building' | 'chat';
+type InputMode = 'website' | 'visual';
 
 function App() {
   const [phase, setPhase] = useState<Phase>('soul');
+  const [inputMode, setInputMode] = useState<InputMode>('website');
   const [selectedModel, setSelectedModel] = useState<ModelDef | null>(null);
   const [addedSkills, setAddedSkills] = useState<Skill[]>([]);
   const [activeSkill, setActiveSkill] = useState<Skill | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
+
+  // Blocky Bits — only polls when visual mode is active
+  const blocky = useBlockyBits(inputMode === 'visual' && (phase === 'soul' || phase === 'builder'));
+  const prevBlockySkillsRef = useRef<string>('');
+  const prevBlockyModelRef = useRef<string | null>(null);
 
   // Apply accent color CSS variables when model changes
   useEffect(() => {
@@ -39,6 +47,59 @@ function App() {
       root.style.setProperty('--accent-subtle', 'rgba(118, 185, 0, 0.1)');
     }
   }, [selectedModel]);
+
+  // Blocky Bits: auto-select model from physical blocks
+  useEffect(() => {
+    if (!blocky.connected || phase !== 'soul') return;
+    if (blocky.modelId && blocky.modelId !== prevBlockyModelRef.current) {
+      prevBlockyModelRef.current = blocky.modelId;
+      const model = models.find(m => m.id === blocky.modelId);
+      if (model) {
+        console.log('[BlockyBits] Auto-selecting model:', model.name);
+        setSelectedModel(model);
+        setPhase('builder');
+      }
+    }
+  }, [blocky.connected, blocky.modelId, phase]);
+
+  // Blocky Bits: auto-add/remove skills from physical blocks
+  useEffect(() => {
+    if (!blocky.connected || phase !== 'builder') return;
+    const key = blocky.skillIds.sort().join(',');
+    if (key === prevBlockySkillsRef.current) return;
+    prevBlockySkillsRef.current = key;
+
+    console.log('[BlockyBits] Syncing skills:', blocky.skillIds);
+
+    // Add skills that are in blocky but not in addedSkills
+    setAddedSkills(prev => {
+      const currentIds = new Set(prev.map(s => s.id));
+      const blockyIds = new Set(blocky.skillIds);
+      
+      // Keep manually added skills + add new blocky skills
+      let updated = [...prev];
+      
+      // Add new blocky skills
+      for (const id of blocky.skillIds) {
+        if (!currentIds.has(id)) {
+          const skill = allSkills.find(s => s.id === id);
+          if (skill) updated.push(skill);
+        }
+      }
+
+      // Remove skills that were added by blocky but are no longer detected
+      // (only remove if the skill ID is in our SKILL_BLOCK_MAP — don't remove manually dragged ones)
+      updated = updated.filter(s => {
+        // Keep if it's still detected by blocky
+        if (blockyIds.has(s.id)) return true;
+        // Keep if it was manually added (not a blocky-mappable skill)
+        // For simplicity, keep all — only add, don't auto-remove
+        return true;
+      });
+
+      return updated;
+    });
+  }, [blocky.connected, blocky.skillIds, phase]);
 
   const handleSoulSelect = useCallback((model: ModelDef) => {
     setSelectedModel(model);
@@ -71,7 +132,6 @@ function App() {
     }
   }, [addedSkills.length, selectedModel]);
 
-  // When build animation completes, create the agent session
   const handleBuildComplete = useCallback(async () => {
     if (!selectedModel) {
       console.error('[App] No model selected');
@@ -87,13 +147,11 @@ function App() {
       setPhase('chat');
     } catch (err) {
       console.error('[App] Failed to create agent session:', err);
-      // Fall back to chat anyway — sendMessage will show an error
       setPhase('chat');
     }
   }, [selectedModel, addedSkills]);
 
   const handleReset = useCallback(() => {
-    // Clean up session
     if (sessionId) {
       deleteAgentSession(sessionId);
     }
@@ -101,7 +159,22 @@ function App() {
     setAddedSkills([]);
     setPhase('soul');
     setSelectedModel(null);
+    prevBlockySkillsRef.current = '';
+    prevBlockyModelRef.current = null;
   }, [sessionId]);
+
+  // Reset when switching modes
+  const handleModeSwitch = useCallback((mode: InputMode) => {
+    if (mode === inputMode) return;
+    if (sessionId) deleteAgentSession(sessionId);
+    setInputMode(mode);
+    setSessionId(null);
+    setAddedSkills([]);
+    setPhase('soul');
+    setSelectedModel(null);
+    prevBlockySkillsRef.current = '';
+    prevBlockyModelRef.current = null;
+  }, [inputMode, sessionId]);
 
   const addedSkillIds = addedSkills.map(s => s.id);
 
@@ -124,8 +197,33 @@ function App() {
             <span className="header-divider">|</span>
             <span className="header-title">Deep Agent Builder</span>
           </div>
-          <div className="header-badge" style={selectedModel ? { borderColor: selectedModel.primaryColor, color: selectedModel.primaryColor, background: selectedModel.subtleColor } : undefined}>
-            {selectedModel ? `${selectedModel.name} · GTC 2026` : 'GTC 2026 Demo'}
+          <div className="header-right">
+            {/* Mode toggle — only on soul picker screen */}
+            {phase === 'soul' && (
+              <div className="mode-toggle">
+                <button
+                  className={`mode-btn ${inputMode === 'website' ? 'active' : ''}`}
+                  onClick={() => handleModeSwitch('website')}
+                >
+                  🖱️ Website
+                </button>
+                <button
+                  className={`mode-btn ${inputMode === 'visual' ? 'active' : ''}`}
+                  onClick={() => handleModeSwitch('visual')}
+                >
+                  🧊 Visual
+                </button>
+              </div>
+            )}
+            {inputMode === 'visual' && (
+              <div className={`blocky-indicator ${blocky.connected ? 'connected' : 'disconnected'}`}>
+                <span className="blocky-dot" />
+                <span>{blocky.connected ? 'Blocks Connected' : 'Waiting for Blocks...'}</span>
+              </div>
+            )}
+            <div className="header-badge" style={selectedModel ? { borderColor: selectedModel.primaryColor, color: selectedModel.primaryColor, background: selectedModel.subtleColor } : undefined}>
+              {selectedModel ? `${selectedModel.name} · GTC 2026` : 'GTC 2026 Demo'}
+            </div>
           </div>
         </motion.header>
 
@@ -205,7 +303,7 @@ function App() {
           {activeSkill && (
             <div className="drag-overlay-card">
               <SkillCard skill={activeSkill} isInPalette={false} />
-      </div>
+            </div>
           )}
         </DragOverlay>
       </div>
