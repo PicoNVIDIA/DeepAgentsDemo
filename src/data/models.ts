@@ -122,6 +122,6 @@ export const models: ModelDef[] = [
     glowColor: 'rgba(217, 119, 87, 0.4)',
     subtleColor: 'rgba(217, 119, 87, 0.1)',
     backendModel: 'meta/llama-3.3-70b-instruct', // Fallback until Anthropic key added
-    recommendedSkills: ['websearch', 'superpowers'],
+    recommendedSkills: ['fileio', 'execute'],
   },
 ];
