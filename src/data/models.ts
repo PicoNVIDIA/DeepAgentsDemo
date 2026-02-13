@@ -43,8 +43,8 @@ export const nemotronVariants: NemotronVariant[] = [
     icon: '📊',
     color: '#0088FF',
     glowColor: 'rgba(0, 136, 255, 0.4)',
-    available: false,
-    backendModel: 'nvidia/nemotron-finance-70b',
+    available: true,
+    backendModel: 'nvidia/llama-3.3-nemotron-super-49b-v1.5',
   },
   {
     id: 'nemotron-code',
@@ -54,8 +54,8 @@ export const nemotronVariants: NemotronVariant[] = [
     icon: '💻',
     color: '#A855F7',
     glowColor: 'rgba(168, 85, 247, 0.4)',
-    available: false,
-    backendModel: 'nvidia/nemotron-code-70b',
+    available: true,
+    backendModel: 'nvidia/llama-3.3-nemotron-super-49b-v1.5',
   },
   {
     id: 'nemotron-legal',
@@ -65,8 +65,8 @@ export const nemotronVariants: NemotronVariant[] = [
     icon: '⚖️',
     color: '#F59E0B',
     glowColor: 'rgba(245, 158, 11, 0.4)',
-    available: false,
-    backendModel: 'nvidia/nemotron-legal-70b',
+    available: true,
+    backendModel: 'nvidia/llama-3.3-nemotron-super-49b-v1.5',
   },
 ];
 
