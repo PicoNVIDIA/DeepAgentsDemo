@@ -9,6 +9,7 @@ export interface ModelDef {
   glowColor: string;
   subtleColor: string;
   backendModel: string;
+  recommendedSkills?: string[];
 }
 
 export interface NemotronVariant {
@@ -82,6 +83,7 @@ export const models: ModelDef[] = [
     glowColor: 'rgba(118, 185, 0, 0.4)',
     subtleColor: 'rgba(118, 185, 0, 0.1)',
     backendModel: 'nvidia/llama-3.3-nemotron-super-49b-v1.5',
+    recommendedSkills: ['websearch', 'superpowers'],
   },
   {
     id: 'llama',
@@ -94,6 +96,7 @@ export const models: ModelDef[] = [
     glowColor: 'rgba(6, 104, 225, 0.4)',
     subtleColor: 'rgba(6, 104, 225, 0.1)',
     backendModel: 'meta/llama-3.3-70b-instruct',
+    recommendedSkills: ['websearch', 'superpowers'],
   },
   {
     id: 'deepseek',
@@ -106,6 +109,7 @@ export const models: ModelDef[] = [
     glowColor: 'rgba(77, 107, 254, 0.4)',
     subtleColor: 'rgba(77, 107, 254, 0.1)',
     backendModel: 'deepseek-ai/deepseek-r1-0528',
+    recommendedSkills: ['websearch', 'superpowers'],
   },
   {
     id: 'claude',
@@ -118,5 +122,6 @@ export const models: ModelDef[] = [
     glowColor: 'rgba(217, 119, 87, 0.4)',
     subtleColor: 'rgba(217, 119, 87, 0.1)',
     backendModel: 'meta/llama-3.3-70b-instruct', // Fallback until Anthropic key added
+    recommendedSkills: ['websearch', 'superpowers'],
   },
 ];
