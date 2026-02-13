@@ -45,15 +45,11 @@ function VariantCard({ variant, index, onSelect }: { variant: NemotronVariant; i
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
       >
-        {/* Animated gradient border */}
-        {variant.available && <div className="variant-border-glow" />}
+        {/* (reserved) */}
 
-        {/* Coming soon ribbon + scan line */}
+        {/* Coming soon ribbon */}
         {!variant.available && (
-          <>
-            <div className="variant-ribbon">Coming Soon</div>
-            <div className="variant-scan-line" />
-          </>
+          <div className="variant-ribbon">Coming Soon</div>
         )}
 
         {/* Icon with hover bounce */}
