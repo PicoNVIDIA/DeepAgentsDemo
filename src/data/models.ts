@@ -11,6 +11,65 @@ export interface ModelDef {
   backendModel: string;
 }
 
+export interface NemotronVariant {
+  id: string;
+  name: string;
+  subtitle: string;
+  description: string;
+  icon: string;
+  color: string;
+  glowColor: string;
+  available: boolean;
+  backendModel: string;
+}
+
+export const nemotronVariants: NemotronVariant[] = [
+  {
+    id: 'nemotron',
+    name: 'Nemotron',
+    subtitle: 'General Purpose',
+    description: 'NVIDIA\'s flagship reasoning model for any task',
+    icon: '🧠',
+    color: '#76B900',
+    glowColor: 'rgba(118, 185, 0, 0.4)',
+    available: true,
+    backendModel: 'nvidia/llama-3.3-nemotron-super-49b-v1.5',
+  },
+  {
+    id: 'nemotron-finance',
+    name: 'Nemotron',
+    subtitle: 'Finance',
+    description: 'Fine-tuned for financial analysis, markets & risk',
+    icon: '📊',
+    color: '#0088FF',
+    glowColor: 'rgba(0, 136, 255, 0.4)',
+    available: false,
+    backendModel: 'nvidia/nemotron-finance-70b',
+  },
+  {
+    id: 'nemotron-code',
+    name: 'Nemotron',
+    subtitle: 'Code',
+    description: 'Fine-tuned for software engineering & CUDA',
+    icon: '💻',
+    color: '#A855F7',
+    glowColor: 'rgba(168, 85, 247, 0.4)',
+    available: false,
+    backendModel: 'nvidia/nemotron-code-70b',
+  },
+  {
+    id: 'nemotron-legal',
+    name: 'Nemotron',
+    subtitle: 'Legal',
+    description: 'Fine-tuned for legal research & compliance',
+    icon: '⚖️',
+    color: '#F59E0B',
+    glowColor: 'rgba(245, 158, 11, 0.4)',
+    available: false,
+    backendModel: 'nvidia/nemotron-legal-70b',
+  },
+];
+
 export const models: ModelDef[] = [
   {
     id: 'nemotron',

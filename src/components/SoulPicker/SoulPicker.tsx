@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { models, type ModelDef } from '../../data/models';
+import { models, type ModelDef, type NemotronVariant } from '../../data/models';
 import { ModelIcon } from './ModelIcons';
+import { NemotronVariantModal } from './NemotronVariantModal';
 import './SoulPicker.css';
 
 interface SoulPickerProps {
@@ -11,6 +12,7 @@ interface SoulPickerProps {
 export function SoulPicker({ onSelect }: SoulPickerProps) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [showNemotronModal, setShowNemotronModal] = useState(false);
 
   const activeColor = hoveredId
     ? models.find(m => m.id === hoveredId)?.primaryColor
@@ -19,9 +21,28 @@ export function SoulPicker({ onSelect }: SoulPickerProps) {
     : '#76B900';
 
   const handleSelect = (model: ModelDef) => {
+    // If Nemotron, show variant picker instead
+    if (model.id === 'nemotron') {
+      setShowNemotronModal(true);
+      return;
+    }
     setSelectedId(model.id);
-    // Brief pause for animation, then advance
     setTimeout(() => onSelect(model), 900);
+  };
+
+  const handleNemotronVariant = (variant: NemotronVariant) => {
+    setShowNemotronModal(false);
+    // Find the base Nemotron model and override with variant's backendModel
+    const nemotronBase = models.find(m => m.id === 'nemotron')!;
+    const selected: ModelDef = {
+      ...nemotronBase,
+      id: variant.id,
+      name: `${variant.name} ${variant.subtitle}`,
+      tagline: variant.description,
+      backendModel: variant.backendModel,
+    };
+    setSelectedId('nemotron');
+    setTimeout(() => onSelect(selected), 600);
   };
 
   // Position cards around the center robot
@@ -306,6 +327,13 @@ export function SoulPicker({ onSelect }: SoulPickerProps) {
           );
         })}
       </div>
+
+      {/* Nemotron variant picker modal */}
+      <NemotronVariantModal
+        isOpen={showNemotronModal}
+        onSelect={handleNemotronVariant}
+        onClose={() => setShowNemotronModal(false)}
+      />
     </motion.div>
   );
 }
