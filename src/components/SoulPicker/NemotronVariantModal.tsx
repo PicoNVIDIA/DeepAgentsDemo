@@ -23,12 +23,13 @@ export function NemotronVariantModal({ isOpen, onSelect, onClose }: NemotronVari
             onClick={onClose}
           />
 
-          {/* Modal */}
+          {/* Modal — use x/y style for centering so Framer doesn't override */}
           <motion.div
             className="variant-modal"
-            initial={{ opacity: 0, scale: 0.85, y: 30 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            style={{ x: '-50%', y: '-50%' }}
+            initial={{ opacity: 0, scale: 0.85 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
             transition={{ type: 'spring', stiffness: 300, damping: 25 }}
             onClick={(e) => e.stopPropagation()}
           >
