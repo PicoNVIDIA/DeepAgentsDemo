@@ -14,15 +14,26 @@ export function RobotVisual({ skills, isBuilding, isReady, accentColor = '#76B90
   const hasSkills = skills.length > 0;
   const c = accentColor;
   const [eyeOffset, setEyeOffset] = useState({ x: 0, y: 0 });
+  const containerRef = useCallback((node: HTMLDivElement | null) => {
+    if (node) containerNodeRef.current = node;
+  }, []);
+  const containerNodeRef = { current: null as HTMLDivElement | null };
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
-    // Get center of viewport as reference
-    const cx = window.innerWidth / 2;
-    const cy = window.innerHeight / 2;
-    // Offset from center, clamped to max 4px movement
-    const dx = Math.max(-4, Math.min(4, (e.clientX - cx) / cx * 4));
-    const dy = Math.max(-3, Math.min(3, (e.clientY - cy) / cy * 3));
-    setEyeOffset({ x: dx, y: dy });
+    const el = document.querySelector('.robot-container');
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    // Use the robot's center as reference
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    // Distance from robot center, normalized
+    const dx = (e.clientX - cx) / (window.innerWidth / 2);
+    const dy = (e.clientY - cy) / (window.innerHeight / 2);
+    // Clamp to max movement
+    setEyeOffset({
+      x: Math.max(-4, Math.min(4, dx * 4)),
+      y: Math.max(-3, Math.min(3, dy * 3)),
+    });
   }, []);
 
   useEffect(() => {
@@ -31,7 +42,7 @@ export function RobotVisual({ skills, isBuilding, isReady, accentColor = '#76B90
   }, [handleMouseMove]);
 
   return (
-    <div className={`robot-container ${isBuilding ? 'building' : ''} ${isReady ? 'ready' : ''}`}>
+    <div ref={containerRef} className={`robot-container ${isBuilding ? 'building' : ''} ${isReady ? 'ready' : ''}`}>
       {/* Ambient glow behind robot */}
       <div className={`robot-ambient-glow ${hasSkills ? 'active' : ''}`} />
       
