@@ -32,6 +32,10 @@ interface ChatSectionProps {
   sessionId: string | null;
 }
 
+function formatTokens(count: number): string {
+  return count >= 1000 ? `${(count / 1000).toFixed(1)}k` : String(count);
+}
+
 export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSectionProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -42,6 +46,7 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
   const [activeTraces, setActiveTraces] = useState<TraceItem[]>([]);
   const tracesRef = useRef<TraceItem[]>([]);
   const [pendingInterrupt, setPendingInterrupt] = useState<InterruptEvent | null>(null);
+  const [sessionTokens, setSessionTokens] = useState<{ input: number; output: number; total: number; reasoning: number }>({ input: 0, output: 0, total: 0, reasoning: 0 });
   const interruptRef = useRef<boolean>(false); // ref copy for capturing into messages
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -178,6 +183,15 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
             setStreamingContent(fullContent);
             break;
 
+          case 'usage':
+            setSessionTokens(prev => ({
+              input: prev.input + event.inputTokens,
+              output: prev.output + event.outputTokens,
+              total: prev.total + event.totalTokens,
+              reasoning: prev.reasoning + event.reasoningTokens,
+            }));
+            break;
+
           case 'interrupt':
             interruptRef.current = true;
             setPendingInterrupt(event as InterruptEvent);
@@ -261,6 +275,14 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
             setActiveToolId(null);
             tracesRef.current = tracesRef.current.map(t => t.id === event.id ? { ...t, status: 'done' as const, duration: event.duration } : t);
             setActiveTraces(tracesRef.current);
+            break;
+          case 'usage':
+            setSessionTokens(prev => ({
+              input: prev.input + event.inputTokens,
+              output: prev.output + event.outputTokens,
+              total: prev.total + event.totalTokens,
+              reasoning: prev.reasoning + event.reasoningTokens,
+            }));
             break;
           case 'interrupt':
             interruptRef.current = true;
@@ -516,6 +538,19 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
                     </svg>
                   </button>
                 </div>
+                {sessionTokens.total > 0 && (
+                  <div className="token-counter">
+                    {sessionTokens.reasoning > 0 ? (
+                      <span className="token-counter-group">
+                        <span>~{formatTokens(sessionTokens.reasoning)} <span className="token-label">reasoning</span></span>
+                        <span className="token-separator">&middot;</span>
+                        <span>~{formatTokens(sessionTokens.output - sessionTokens.reasoning)} <span className="token-label">output</span></span>
+                      </span>
+                    ) : (
+                      <>~{formatTokens(sessionTokens.total)} tokens generated</>
+                    )}
+                  </div>
+                )}
                 <p className="chat-hint">
                   Try: "Search for GPU optimization tips" · "What's new at GTC 2026?" · "Write some code"
                 </p>

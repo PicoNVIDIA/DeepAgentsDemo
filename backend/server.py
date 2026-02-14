@@ -4,6 +4,7 @@ human-in-the-loop approval, and skills support.
 """
 
 import json
+import re
 import time
 import uuid
 import traceback
@@ -295,6 +296,44 @@ def _process_event(event: dict, tool_timers: dict[str, float]) -> dict | None:
                 "duration": duration_ms,
             }),
         }
+
+    elif kind == "on_chat_model_end":
+        message = event.get("data", {}).get("output")
+        if message and hasattr(message, "usage_metadata") and message.usage_metadata:
+            usage = message.usage_metadata
+            output_tok = usage.get("output_tokens", 0)
+
+            # Try standard LangChain field first (future-proof)
+            output_details = usage.get("output_token_details") or {}
+            reasoning_tokens = output_details.get("reasoning", 0)
+
+            if not reasoning_tokens:
+                # Find reasoning text: prefer additional_kwargs, fall back to <think> tags
+                reasoning_text = ""
+                if hasattr(message, "additional_kwargs"):
+                    reasoning_text = message.additional_kwargs.get("reasoning_content", "")
+                content_str = str(message.content) if hasattr(message, "content") and message.content else ""
+                if not reasoning_text and content_str:
+                    think_matches = re.findall(r'<think>([\s\S]*?)</think>', content_str)
+                    reasoning_text = ''.join(think_matches)
+
+                # Estimate reasoning tokens as a proportion of output_tokens
+                # so that reasoning + output-only always == output_tokens
+                if reasoning_text and output_tok:
+                    output_only_text = re.sub(r'<think>[\s\S]*?</think>', '', content_str).strip()
+                    total_chars = len(reasoning_text) + len(output_only_text)
+                    if total_chars > 0:
+                        reasoning_tokens = max(1, int(output_tok * len(reasoning_text) / total_chars))
+
+            return {
+                "event": "usage",
+                "data": json.dumps({
+                    "input_tokens": usage.get("input_tokens", 0),
+                    "output_tokens": output_tok,
+                    "total_tokens": usage.get("total_tokens", 0),
+                    "reasoning_tokens": reasoning_tokens,
+                }),
+            }
 
     return None
 
