@@ -3,8 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Skill } from '../../data/skills';
+import type { ModelDef } from '../../data/models';
 import type { ToolCall } from '../ToolCallsPanel';
 import { ToolCallsPanel } from '../ToolCallsPanel';
+import { ExportModal } from '../ExportModal';
 import { sendMessage, sendApproval } from '../../api/agent';
 import type { InterruptEvent } from '../../api/agent';
 import './ChatSection.css';
@@ -30,13 +32,14 @@ interface ChatSectionProps {
   skills: Skill[];
   onReset: () => void;
   sessionId: string | null;
+  model: ModelDef;
 }
 
 function formatTokens(count: number): string {
   return count >= 1000 ? `${(count / 1000).toFixed(1)}k` : String(count);
 }
 
-export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSectionProps) {
+export function ChatSection({ isVisible, skills, onReset, sessionId, model }: ChatSectionProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -47,6 +50,7 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
   const tracesRef = useRef<TraceItem[]>([]);
   const [pendingInterrupt, setPendingInterrupt] = useState<InterruptEvent | null>(null);
   const [sessionTokens, setSessionTokens] = useState<{ input: number; output: number; total: number; reasoning: number }>({ input: 0, output: 0, total: 0, reasoning: 0 });
+  const [showExportModal, setShowExportModal] = useState(false);
   const interruptRef = useRef<boolean>(false); // ref copy for capturing into messages
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -363,9 +367,23 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
                     )}
                   </div>
                 </div>
-                <button className="reset-btn" onClick={onReset}>
-                  Build New Agent
-                </button>
+                <div className="chat-header-actions">
+                  <button
+                    className="export-btn"
+                    onClick={() => setShowExportModal(true)}
+                    disabled={sessionTokens.total === 0}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    Export
+                  </button>
+                  <button className="reset-btn" onClick={onReset}>
+                    Build New Agent
+                  </button>
+                </div>
               </div>
 
               {/* Messages */}
@@ -564,6 +582,15 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
               activeToolId={activeToolId}
             />
           </div>
+
+          <ExportModal
+            isOpen={showExportModal}
+            onClose={() => setShowExportModal(false)}
+            model={model}
+            skills={skills}
+            sessionTokens={sessionTokens}
+            toolCalls={toolCalls}
+          />
         </motion.div>
       )}
     </AnimatePresence>
