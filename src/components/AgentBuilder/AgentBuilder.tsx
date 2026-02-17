@@ -9,9 +9,11 @@ interface AgentBuilderProps {
   isBuilding: boolean;
   isReady: boolean;
   onRemoveSkill: (skillId: string) => void;
+  sandboxMap: Record<string, boolean>;
+  onToggleSandbox: (skillId: string) => void;
 }
 
-export function AgentBuilder({ skills, isBuilding, isReady, onRemoveSkill }: AgentBuilderProps) {
+export function AgentBuilder({ skills, isBuilding, isReady, onRemoveSkill, sandboxMap, onToggleSandbox }: AgentBuilderProps) {
   const { isOver, setNodeRef } = useDroppable({
     id: 'agent-dropzone',
   });
@@ -95,28 +97,44 @@ export function AgentBuilder({ skills, isBuilding, isReady, onRemoveSkill }: Age
           >
             <h3 className="added-skills-title">Added Skills ({skills.length})</h3>
             <div className="added-skills-list">
-              {skills.map((skill) => (
-                <motion.div
-                  key={skill.id}
-                  className="added-skill-chip"
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  exit={{ scale: 0 }}
-                  whileHover={{ scale: 1.05 }}
-                  layout
-                >
-                  <span className="chip-icon">{skill.icon}</span>
-                  <span className="chip-name">{skill.name}</span>
-                  <button
-                    className="chip-remove"
-                    onClick={() => onRemoveSkill(skill.id)}
-                    aria-label={`Remove ${skill.name}`}
+              {skills.map((skill) => {
+                const isSandboxed = sandboxMap[skill.id] || false;
+                return (
+                  <motion.div
+                    key={skill.id}
+                    className={`added-skill-chip ${isSandboxed ? 'sandboxed' : ''}`}
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                    whileHover={{ scale: 1.05 }}
+                    layout
                   >
-                    ×
-                  </button>
-                  <span className="chip-tooltip">{skill.description}</span>
-                </motion.div>
-              ))}
+                    <span className="chip-icon">{skill.icon}</span>
+                    <span className="chip-name">{skill.name}</span>
+                    {skill.sandboxable && (
+                      <button
+                        className={`chip-sandbox-toggle ${isSandboxed ? 'locked' : 'unlocked'}`}
+                        onClick={(e) => { e.stopPropagation(); onToggleSandbox(skill.id); }}
+                        aria-label={isSandboxed ? 'Disable sandbox' : 'Enable sandbox'}
+                        title={isSandboxed ? 'Sandboxed (isolated)' : 'Local (no sandbox)'}
+                      >
+                        {isSandboxed ? '🔒' : '🔓'}
+                      </button>
+                    )}
+                    <button
+                      className="chip-remove"
+                      onClick={() => onRemoveSkill(skill.id)}
+                      aria-label={`Remove ${skill.name}`}
+                    >
+                      ×
+                    </button>
+                    <span className="chip-tooltip">
+                      {skill.description}
+                      {skill.sandboxable && (isSandboxed ? ' (sandboxed)' : ' (local)')}
+                    </span>
+                  </motion.div>
+                );
+              })}
             </div>
           </motion.div>
         )}

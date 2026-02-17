@@ -36,14 +36,15 @@ app.add_middleware(
 # ── Session store ────────────────────────────────────────────────────────────
 
 class AgentSession:
-    def __init__(self, agent, model_id: str, skill_ids: list[str], thread_id: str, hitl_enabled: bool):
+    def __init__(self, agent, model_id: str, skill_ids: list[str], thread_id: str, hitl_enabled: bool, sandbox=None):
         self.agent = agent
         self.model_id = model_id
         self.skill_ids = skill_ids
         self.thread_id = thread_id
         self.hitl_enabled = hitl_enabled
+        self.sandbox = sandbox  # Daytona sandbox reference for cleanup
         self.messages: list = []
-        self.pending_interrupt: dict | None = None  # Stores interrupt data awaiting approval
+        self.pending_interrupt: dict | None = None
         self.created_at = time.time()
 
     @property
@@ -59,6 +60,7 @@ class CreateAgentRequest(BaseModel):
     model_id: str = "llama"
     skill_ids: list[str] = []
     hitl_enabled: bool = False
+    sandbox_map: dict[str, bool] = {}
 
 class ChatRequest(BaseModel):
     message: str
@@ -102,11 +104,12 @@ async def create_agent_session(request: CreateAgentRequest):
     try:
         session_id = str(uuid.uuid4())[:8]
         thread_id = f"thread-{session_id}"
-        agent = create_agent(request.skill_ids, request.model_id, request.hitl_enabled)
+        agent, sandbox = create_agent(request.skill_ids, request.model_id, request.hitl_enabled, request.sandbox_map)
         sessions[session_id] = AgentSession(
-            agent, request.model_id, request.skill_ids, thread_id, request.hitl_enabled
+            agent, request.model_id, request.skill_ids, thread_id, request.hitl_enabled, sandbox=sandbox
         )
-        print(f"[Session] Created {session_id} model={request.model_id} hitl={request.hitl_enabled}")
+        sandboxed_tools = [k for k, v in request.sandbox_map.items() if v]
+        print(f"[Session] Created {session_id} model={request.model_id} hitl={request.hitl_enabled} sandboxed={sandboxed_tools}")
         return {"session_id": session_id, "hitl_enabled": request.hitl_enabled}
     except Exception as e:
         traceback.print_exc()
@@ -115,8 +118,16 @@ async def create_agent_session(request: CreateAgentRequest):
 
 @app.delete("/api/agent/{session_id}")
 async def delete_agent_session(session_id: str):
-    """Destroy an agent session."""
+    """Destroy an agent session and its sandbox if any."""
     if session_id in sessions:
+        session = sessions[session_id]
+        # Clean up Daytona sandbox
+        if session.sandbox:
+            try:
+                session.sandbox.delete()
+                print(f"[Session] Deleted sandbox for {session_id}")
+            except Exception as e:
+                print(f"[Session] Sandbox cleanup error: {e}")
         del sessions[session_id]
         return {"status": "deleted"}
     raise HTTPException(status_code=404, detail="Session not found")

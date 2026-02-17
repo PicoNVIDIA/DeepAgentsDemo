@@ -152,21 +152,32 @@ CRITICAL RULES:
 {hitl_note}{skill_section}"""
 
 
-def create_agent(
-    skill_ids: list[str] | None = None,
-    model_id: str = "llama",
-    hitl_enabled: bool = False,
-):
-    """Create a Deep Agent with optional human-in-the-loop and skills."""
-    if skill_ids is None:
-        skill_ids = []
+def _build_backend(skill_ids: list[str], sandbox_map: dict[str, bool]):
+    """
+    Build the execution backend.
+    If any tools are sandboxed, use DaytonaSandbox (local Docker).
+    Otherwise use LocalShellBackend or FilesystemBackend.
+    Returns (backend, sandbox_instance_or_None).
+    """
+    any_sandboxed = any(sandbox_map.get(sid, False) for sid in skill_ids)
 
-    model = _get_model(model_id)
-    extra_tools = _build_extra_tools(skill_ids)
-    system_prompt = _build_system_prompt(skill_ids, model_id, hitl_enabled)
-    skill_sources = _get_skill_sources()
+    if any_sandboxed:
+        try:
+            from daytona_sdk import Daytona
+            from langchain_daytona import DaytonaSandbox
 
-    # Build backend: LocalShellBackend includes file ops + execute
+            daytona = Daytona()  # Connects to local Daytona server
+            sandbox = daytona.create()
+            backend = DaytonaSandbox(sandbox=sandbox)
+            sandboxed_tools = [k for k, v in sandbox_map.items() if v]
+            print(f"[Agent] Daytona sandbox created for tools: {sandboxed_tools}")
+            return backend, sandbox
+        except ImportError:
+            print("[Agent] WARNING: daytona-sdk/langchain-daytona not installed. Falling back to local execution.")
+        except Exception as e:
+            print(f"[Agent] WARNING: Failed to create Daytona sandbox: {e}. Falling back to local.")
+
+    # Fallback: local execution
     if "execute" in skill_ids:
         backend = LocalShellBackend(
             root_dir=WORKSPACE_DIR,
@@ -174,9 +185,35 @@ def create_agent(
             max_output_bytes=50000,
             inherit_env=True,
         )
-        print("[Agent] Shell execution enabled via LocalShellBackend")
+        print("[Agent] Shell execution enabled via LocalShellBackend (local)")
     else:
         backend = FilesystemBackend(root_dir=WORKSPACE_DIR)
+        print("[Agent] Using FilesystemBackend (local)")
+
+    return backend, None
+
+
+def create_agent(
+    skill_ids: list[str] | None = None,
+    model_id: str = "llama",
+    hitl_enabled: bool = False,
+    sandbox_map: dict[str, bool] | None = None,
+):
+    """
+    Create a Deep Agent with optional sandboxing, human-in-the-loop, and skills.
+    Returns (agent, sandbox_instance_or_None).
+    """
+    if skill_ids is None:
+        skill_ids = []
+    if sandbox_map is None:
+        sandbox_map = {}
+
+    model = _get_model(model_id)
+    extra_tools = _build_extra_tools(skill_ids)
+    system_prompt = _build_system_prompt(skill_ids, model_id, hitl_enabled)
+    skill_sources = _get_skill_sources()
+
+    backend, sandbox = _build_backend(skill_ids, sandbox_map)
 
     agent_kwargs: dict = {
         "model": model,
@@ -193,5 +230,6 @@ def create_agent(
         agent_kwargs["skills"] = skill_sources
 
     agent = create_deep_agent(**agent_kwargs)
-    print(f"[Agent] Created deep agent: skills={skill_ids}, hitl={hitl_enabled}, skill_sources={skill_sources}")
-    return agent
+    sandboxed = [k for k, v in sandbox_map.items() if v]
+    print(f"[Agent] Created deep agent: skills={skill_ids}, hitl={hitl_enabled}, sandboxed={sandboxed}")
+    return agent, sandbox

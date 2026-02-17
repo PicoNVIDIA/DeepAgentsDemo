@@ -4,6 +4,7 @@ export interface Skill {
   description: string;
   category: string;
   icon: string;
+  sandboxable?: boolean;
 }
 
 export const skills: Skill[] = [
@@ -14,6 +15,7 @@ export const skills: Skill[] = [
     description: 'Real-time internet search via Tavily',
     category: 'tools',
     icon: '🌐',
+    sandboxable: true,
   },
   {
     id: 'fileio',
@@ -21,6 +23,7 @@ export const skills: Skill[] = [
     description: 'Read, write, edit files & search code',
     category: 'tools',
     icon: '📁',
+    sandboxable: true,
   },
   {
     id: 'execute',
@@ -28,14 +31,16 @@ export const skills: Skill[] = [
     description: 'Run shell commands, Python scripts & system tools',
     category: 'tools',
     icon: '💻',
+    sandboxable: true,
   },
-  // Skills (loaded as methodology/instructions)
+  // Skills (loaded as methodology/instructions — not sandboxable)
   {
     id: 'superpowers',
     name: 'Superpowers',
     description: 'TDD, planning & debugging methodology',
     category: 'skills',
     icon: '⚡',
+    sandboxable: false,
   },
   {
     id: 'cudf',
@@ -43,6 +48,7 @@ export const skills: Skill[] = [
     description: 'GPU-accelerated DataFrames (NVIDIA RAPIDS)',
     category: 'skills',
     icon: '🟩',
+    sandboxable: false,
   },
 ];
 

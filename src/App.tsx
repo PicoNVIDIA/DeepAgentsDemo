@@ -26,6 +26,7 @@ function App() {
   const [addedSkills, setAddedSkills] = useState<Skill[]>([]);
   const [activeSkill, setActiveSkill] = useState<Skill | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sandboxMap, setSandboxMap] = useState<Record<string, boolean>>({});
 
   // Blocky Bits — only polls when visual mode is active
   const blocky = useBlockyBits(inputMode === 'visual' && (phase === 'soul' || phase === 'builder'));
@@ -124,6 +125,11 @@ function App() {
 
   const handleRemoveSkill = useCallback((skillId: string) => {
     setAddedSkills(prev => prev.filter(s => s.id !== skillId));
+    setSandboxMap(prev => { const next = { ...prev }; delete next[skillId]; return next; });
+  }, []);
+
+  const handleToggleSandbox = useCallback((skillId: string) => {
+    setSandboxMap(prev => ({ ...prev, [skillId]: !prev[skillId] }));
   }, []);
 
   const handleBuild = useCallback(() => {
@@ -141,7 +147,7 @@ function App() {
     try {
       const skillIds = addedSkills.map(s => s.id);
       console.log('[App] Creating agent session:', selectedModel.id, skillIds);
-      const id = await createAgentSession(selectedModel.id, skillIds, true);
+      const id = await createAgentSession(selectedModel.id, skillIds, true, sandboxMap);
       console.log('[App] Session created:', id);
       setSessionId(id);
       setPhase('chat');
@@ -157,6 +163,7 @@ function App() {
     }
     setSessionId(null);
     setAddedSkills([]);
+    setSandboxMap({});
     setPhase('soul');
     setSelectedModel(null);
     prevBlockySkillsRef.current = '';
@@ -170,6 +177,7 @@ function App() {
     setInputMode(mode);
     setSessionId(null);
     setAddedSkills([]);
+    setSandboxMap({});
     setPhase('soul');
     setSelectedModel(null);
     prevBlockySkillsRef.current = '';
@@ -260,6 +268,8 @@ function App() {
                     isBuilding={phase === 'building'}
                     isReady={false}
                     onRemoveSkill={handleRemoveSkill}
+                    sandboxMap={sandboxMap}
+                    onToggleSandbox={handleToggleSandbox}
                   />
                   
                   <BuildButton
