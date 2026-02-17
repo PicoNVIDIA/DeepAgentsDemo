@@ -14,6 +14,7 @@ import { BuildAnimation } from './components/BuildAnimation';
 import { ParticleBackground } from './components/ParticleBackground';
 import { ChatSection } from './components/ChatSection';
 import { SkillCard } from './components/SkillCard';
+import { SettingsPanel } from './components/SettingsPanel';
 import './App.css';
 
 type Phase = 'soul' | 'builder' | 'building' | 'chat';
@@ -249,14 +250,11 @@ function App() {
                 <span>{blocky.connected ? 'Blocks Connected' : 'Waiting for Blocks...'}</span>
               </div>
             )}
-            {/* Sandbox mode toggle — show on builder + chat */}
-            {(phase === 'builder' || phase === 'building' || phase === 'chat') && (
-              <button
-                className={`sandbox-mode-btn ${sandboxMode ? 'on' : 'off'}`}
-                onClick={handleToggleSandboxMode}
-              >
-                {sandboxMode ? '🔒 Sandbox On' : '⚠️ Sandbox Off'}
-              </button>
+            {/* Sandbox indicator in header — show on chat only */}
+            {phase === 'chat' && (
+              <span className={`sandbox-mode-badge ${sandboxMode ? 'on' : 'off'}`}>
+                {sandboxMode ? '🔒 Sandboxed' : '⚠️ No Sandbox'}
+              </span>
             )}
             <div className="header-badge" style={selectedModel ? { borderColor: selectedModel.primaryColor, color: selectedModel.primaryColor, background: selectedModel.subtleColor } : undefined}>
               {selectedModel ? `${selectedModel.name} · GTC 2026` : 'GTC 2026 Demo'}
@@ -308,6 +306,13 @@ function App() {
                     skillCount={addedSkills.length}
                   />
                 </div>
+
+                <SettingsPanel
+                  sandboxMode={sandboxMode}
+                  onToggleSandbox={handleToggleSandboxMode}
+                  skills={addedSkills}
+                  sandboxMap={sandboxMap}
+                />
               </motion.div>
             )}
 
