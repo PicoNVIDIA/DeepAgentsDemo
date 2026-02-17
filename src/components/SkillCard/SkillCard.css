@@ -13,6 +13,36 @@
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
+/* Recommended glow */
+.skill-card.recommended {
+  border-color: var(--rec-color, var(--accent-color));
+  box-shadow: 0 0 12px var(--rec-glow, var(--accent-glow));
+  animation: rec-glow-pulse 2.5s ease-in-out infinite;
+}
+
+.skill-card-rec-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at 50% 100%,
+    var(--rec-glow, var(--accent-glow)) 0%,
+    transparent 70%
+  );
+  opacity: 0.3;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+@keyframes rec-glow-pulse {
+  0%, 100% { box-shadow: 0 0 12px var(--rec-glow, var(--accent-glow)); }
+  50% { box-shadow: 0 0 22px var(--rec-glow, var(--accent-glow)); }
+}
+
+.skill-card.recommended .skill-card-category {
+  background: var(--rec-glow, var(--accent-glow));
+  color: #fff;
+}
+
 .skill-card:hover {
   border-color: var(--accent-color);
   box-shadow: var(--shadow-glow);

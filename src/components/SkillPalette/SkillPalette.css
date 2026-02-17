@@ -66,6 +66,22 @@
   border-radius: var(--radius-full);
 }
 
+.skill-category-badge {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  color: var(--accent-color);
+  padding: 2px 8px;
+  background: var(--accent-subtle);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--accent-color);
+  animation: badge-pulse 2s ease-in-out infinite;
+}
+
+@keyframes badge-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--accent-glow); }
+  50% { box-shadow: 0 0 8px 2px var(--accent-glow); }
+}
+
 .skill-category-list {
   display: flex;
   flex-direction: column;

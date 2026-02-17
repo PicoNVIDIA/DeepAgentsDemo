@@ -252,7 +252,7 @@ function App() {
                 exit={{ opacity: 0, x: -50 }}
                 transition={{ duration: 0.3 }}
               >
-                <SkillPalette addedSkillIds={addedSkillIds} />
+                <SkillPalette addedSkillIds={addedSkillIds} selectedModel={selectedModel} />
                 
                 <div className="app-main">
                   <AgentBuilder 
