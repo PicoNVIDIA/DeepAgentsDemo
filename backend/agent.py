@@ -14,9 +14,11 @@ from langgraph.checkpoint.memory import MemorySaver
 from langchain_nvidia_ai_endpoints import ChatNVIDIA
 
 
-# Workspace directory for file operations
-WORKSPACE_DIR = "/tmp/deepagent_workspace"
+# Workspace directories
+WORKSPACE_DIR = "/tmp/deepagent_workspace"            # Local (has sensitive files for demo)
+SANDBOX_WORKSPACE_DIR = "/tmp/deepagent_sandbox"      # Clean workspace when sandbox enabled
 os.makedirs(WORKSPACE_DIR, exist_ok=True)
+os.makedirs(SANDBOX_WORKSPACE_DIR, exist_ok=True)
 
 # Skills directory
 SKILLS_DIR = os.path.join(os.path.dirname(__file__), "skills")
@@ -107,9 +109,10 @@ def _get_skill_sources() -> list[str]:
     return []
 
 
-def _build_system_prompt(skill_ids: list[str], model_id: str, hitl_enabled: bool) -> str:
+def _build_system_prompt(skill_ids: list[str], model_id: str, hitl_enabled: bool, sandbox_enabled: bool = False) -> str:
     """Create a system prompt that includes the selected capabilities and skills."""
     model_name = MODEL_DISPLAY_NAMES.get(model_id, "AI Model")
+    workspace = SANDBOX_WORKSPACE_DIR if sandbox_enabled else WORKSPACE_DIR
 
     enabled = []
     if "websearch" in skill_ids:
@@ -144,8 +147,8 @@ Your enabled capabilities:
 
 CRITICAL RULES:
 1. Answer the user's question DIRECTLY. Do NOT use the 'task' tool — respond yourself.
-2. File tools require ABSOLUTE paths. Your workspace is: {WORKSPACE_DIR}
-   Always use paths like: {WORKSPACE_DIR}/hello.py
+2. File tools require ABSOLUTE paths. Your workspace is: {workspace}
+   Always use paths like: {workspace}/hello.py
 3. Use web search when the user asks for current information.
 4. Be concise and technically accurate.
 5. You are running on NVIDIA infrastructure.
@@ -177,18 +180,25 @@ def _build_backend(skill_ids: list[str], sandbox_map: dict[str, bool]):
         except Exception as e:
             print(f"[Agent] WARNING: Failed to create Daytona sandbox: {e}. Falling back to local.")
 
-    # Fallback: local execution
+    # If sandbox mode is on but Daytona isn't available, use a clean local directory
+    if any_sandboxed:
+        workspace = SANDBOX_WORKSPACE_DIR
+        print(f"[Agent] Sandbox mode ON — using clean workspace: {workspace}")
+    else:
+        workspace = WORKSPACE_DIR
+        print(f"[Agent] Sandbox mode OFF — using local workspace: {workspace}")
+
     if "execute" in skill_ids:
         backend = LocalShellBackend(
-            root_dir=WORKSPACE_DIR,
+            root_dir=workspace,
             timeout=60.0,
             max_output_bytes=50000,
             inherit_env=True,
         )
-        print("[Agent] Shell execution enabled via LocalShellBackend (local)")
+        print("[Agent] Shell execution enabled via LocalShellBackend")
     else:
-        backend = FilesystemBackend(root_dir=WORKSPACE_DIR)
-        print("[Agent] Using FilesystemBackend (local)")
+        backend = FilesystemBackend(root_dir=workspace)
+        print("[Agent] Using FilesystemBackend")
 
     return backend, None
 
@@ -210,7 +220,8 @@ def create_agent(
 
     model = _get_model(model_id)
     extra_tools = _build_extra_tools(skill_ids)
-    system_prompt = _build_system_prompt(skill_ids, model_id, hitl_enabled)
+    any_sandboxed = any(sandbox_map.get(sid, False) for sid in skill_ids)
+    system_prompt = _build_system_prompt(skill_ids, model_id, hitl_enabled, any_sandboxed)
     skill_sources = _get_skill_sources()
 
     backend, sandbox = _build_backend(skill_ids, sandbox_map)
