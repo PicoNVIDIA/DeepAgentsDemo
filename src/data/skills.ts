@@ -44,6 +44,13 @@ export const skills: Skill[] = [
     category: 'skills',
     icon: '🟩',
   },
+  {
+    id: 'code_review',
+    name: 'Code Review',
+    description: 'Systematic code quality & correctness analysis',
+    category: 'skills',
+    icon: '🔍',
+  },
 ];
 
 // Coming soon — will be wired to real backends (MCP, skills, etc.)
