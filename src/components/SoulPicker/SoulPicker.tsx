@@ -68,7 +68,7 @@ export function SoulPicker({ onSelect }: SoulPickerProps) {
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.2 }}
       >
-        <h1>Choose the <span className="soul-accent" style={{ color: activeColor }}>Soul</span> of Your Agent</h1>
+        <h1>Choose the <span className="soul-accent" style={{ color: activeColor }}>LLM</span> of Your Agent</h1>
         <p>Select the foundation model that powers your Deep Agent</p>
       </motion.div>
 
