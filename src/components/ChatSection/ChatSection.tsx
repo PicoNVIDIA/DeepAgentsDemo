@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -51,6 +51,7 @@ export function ChatSection({ isVisible, skills, onReset, sessionId, model }: Ch
   const [pendingInterrupt, setPendingInterrupt] = useState<InterruptEvent | null>(null);
   const [sessionTokens, setSessionTokens] = useState<{ input: number; output: number; total: number; reasoning: number }>({ input: 0, output: 0, total: 0, reasoning: 0 });
   const [showExportModal, setShowExportModal] = useState(false);
+  const [usedQuestions, setUsedQuestions] = useState<Set<string>>(new Set());
   const interruptRef = useRef<boolean>(false); // ref copy for capturing into messages
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -80,8 +81,28 @@ export function ChatSection({ isVisible, skills, onReset, sessionId, model }: Ch
     }
   }, [isVisible]);
 
-  const handleSend = useCallback(async () => {
-    if (!input.trim() || isTyping) return;
+  // Pick one random question per enabled skill, shuffle, take up to 3
+  const suggestedQuestions = useMemo(() => {
+    const questions: string[] = [];
+    for (const skill of skills) {
+      if (skill.sampleQuestions && skill.sampleQuestions.length > 0) {
+        const idx = Math.floor(Math.random() * skill.sampleQuestions.length);
+        questions.push(skill.sampleQuestions[idx]);
+      }
+    }
+    // Fisher-Yates shuffle
+    for (let i = questions.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [questions[i], questions[j]] = [questions[j], questions[i]];
+    }
+    return questions.slice(0, 3);
+  }, [skills]);
+
+  const remainingQuestions = suggestedQuestions.filter(q => !usedQuestions.has(q));
+
+  const handleSend = useCallback(async (overrideText?: string) => {
+    const text = overrideText ?? input;
+    if (!text.trim() || isTyping) return;
 
     if (!sessionId) {
       setMessages(prev => [...prev, {
@@ -96,12 +117,12 @@ export function ChatSection({ isVisible, skills, onReset, sessionId, model }: Ch
     const userMessage: Message = {
       id: `user-${Date.now()}`,
       role: 'user',
-      content: input,
+      content: text,
       timestamp: new Date(),
     };
 
     setMessages(prev => [...prev, userMessage]);
-    const currentInput = input;
+    const currentInput = text;
     setInput('');
     setIsTyping(true);
     setStreamingContent('');
@@ -529,6 +550,35 @@ export function ChatSection({ isVisible, skills, onReset, sessionId, model }: Ch
                   )}
                 </AnimatePresence>
                 
+                <AnimatePresence>
+                  {!isTyping && remainingQuestions.length > 0 && (
+                    <motion.div
+                      className="suggested-questions"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                    >
+                      {remainingQuestions.map((question, index) => (
+                        <motion.button
+                          key={question}
+                          className="suggested-question-pill"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.1 }}
+                          whileHover={{ scale: 1.03 }}
+                          whileTap={{ scale: 0.97 }}
+                          onClick={() => {
+                            setUsedQuestions(prev => new Set(prev).add(question));
+                            handleSend(question);
+                          }}
+                        >
+                          {question}
+                        </motion.button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
                 <div ref={messagesEndRef} />
               </div>
 
@@ -547,7 +597,7 @@ export function ChatSection({ isVisible, skills, onReset, sessionId, model }: Ch
                   />
                   <button 
                     className="send-btn"
-                    onClick={handleSend}
+                    onClick={() => handleSend()}
                     disabled={!input.trim() || isTyping}
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -569,9 +619,6 @@ export function ChatSection({ isVisible, skills, onReset, sessionId, model }: Ch
                     )}
                   </div>
                 )}
-                <p className="chat-hint">
-                  Try: "Search for GPU optimization tips" · "What's new at GTC 2026?" · "Write some code"
-                </p>
               </div>
             </div>
 

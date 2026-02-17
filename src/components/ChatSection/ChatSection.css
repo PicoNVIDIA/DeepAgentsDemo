@@ -391,11 +391,33 @@
   opacity: 0.7;
 }
 
-.chat-hint {
-  margin: var(--space-2) 0 0;
+.suggested-questions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+  margin-top: auto;
+  margin-bottom: calc(-1 * var(--space-3));
+  padding: 0 var(--space-2);
+}
+
+.suggested-question-pill {
+  padding: var(--space-1) var(--space-3);
+  background: var(--accent-subtle);
+  border: 1px solid var(--accent-color);
+  border-radius: var(--radius-full);
+  font-family: var(--font-family-sans);
   font-size: var(--text-xs);
-  color: var(--text-tertiary);
-  text-align: center;
+  font-weight: var(--font-medium);
+  color: var(--accent-color);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.suggested-question-pill:hover {
+  background: var(--accent-color);
+  color: var(--text-inverse);
+  box-shadow: 0 0 12px var(--accent-glow);
 }
 
 /* Tool traces — inline notifications above the response */
