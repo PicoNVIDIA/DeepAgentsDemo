@@ -130,10 +130,6 @@ function App() {
     setSandboxMap(prev => { const next = { ...prev }; delete next[skillId]; return next; });
   }, []);
 
-  const handleToggleSandbox = useCallback((skillId: string) => {
-    setSandboxMap(prev => ({ ...prev, [skillId]: !prev[skillId] }));
-  }, []);
-
   const handleToggleSandboxMode = useCallback(() => {
     if (!sandboxMode) {
       // Turning ON — show info popup
@@ -302,7 +298,6 @@ function App() {
                     isReady={false}
                     onRemoveSkill={handleRemoveSkill}
                     sandboxMap={sandboxMap}
-                    onToggleSandbox={handleToggleSandbox}
                   />
                   
                   <BuildButton

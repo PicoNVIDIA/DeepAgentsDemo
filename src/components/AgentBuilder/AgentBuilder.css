@@ -187,36 +187,29 @@
   color: var(--text-primary);
 }
 
-/* Sandbox toggle */
-.chip-sandbox-toggle {
+/* Sandbox indicator (read-only, controlled by global toggle) */
+.chip-sandbox-indicator {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  background: transparent;
-  border: 1px solid var(--border-default);
+  width: 22px;
+  height: 22px;
+  font-size: 0.75rem;
   border-radius: var(--radius-sm);
-  font-size: 0.8rem;
-  cursor: pointer;
+  border: 1px solid var(--border-default);
+  pointer-events: none;
   transition: all var(--transition-fast);
 }
 
-.chip-sandbox-toggle.unlocked {
-  border-color: var(--border-default);
-  opacity: 0.6;
+.chip-sandbox-indicator.unlocked {
+  opacity: 0.4;
 }
 
-.chip-sandbox-toggle.unlocked:hover {
-  opacity: 1;
-  border-color: var(--accent-color);
-}
-
-.chip-sandbox-toggle.locked {
+.chip-sandbox-indicator.locked {
   border-color: var(--accent-color);
   background: var(--accent-subtle);
   box-shadow: 0 0 8px var(--accent-glow);
+  opacity: 1;
   animation: sandbox-glow 2s ease-in-out infinite;
 }
 

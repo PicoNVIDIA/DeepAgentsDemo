@@ -10,10 +10,9 @@ interface AgentBuilderProps {
   isReady: boolean;
   onRemoveSkill: (skillId: string) => void;
   sandboxMap: Record<string, boolean>;
-  onToggleSandbox: (skillId: string) => void;
 }
 
-export function AgentBuilder({ skills, isBuilding, isReady, onRemoveSkill, sandboxMap, onToggleSandbox }: AgentBuilderProps) {
+export function AgentBuilder({ skills, isBuilding, isReady, onRemoveSkill, sandboxMap }: AgentBuilderProps) {
   const { isOver, setNodeRef } = useDroppable({
     id: 'agent-dropzone',
   });
@@ -112,14 +111,12 @@ export function AgentBuilder({ skills, isBuilding, isReady, onRemoveSkill, sandb
                     <span className="chip-icon">{skill.icon}</span>
                     <span className="chip-name">{skill.name}</span>
                     {skill.sandboxable && (
-                      <button
-                        className={`chip-sandbox-toggle ${isSandboxed ? 'locked' : 'unlocked'}`}
-                        onClick={(e) => { e.stopPropagation(); onToggleSandbox(skill.id); }}
-                        aria-label={isSandboxed ? 'Disable sandbox' : 'Enable sandbox'}
-                        title={isSandboxed ? 'Sandboxed (isolated)' : 'Local (no sandbox)'}
+                      <span
+                        className={`chip-sandbox-indicator ${isSandboxed ? 'locked' : 'unlocked'}`}
+                        title={isSandboxed ? 'Sandboxed (isolated)' : 'No sandbox'}
                       >
                         {isSandboxed ? '🔒' : '🔓'}
-                      </button>
+                      </span>
                     )}
                     <button
                       className="chip-remove"
