@@ -368,6 +368,9 @@ export function ChatSection({ isVisible, skills, onReset, sessionId, model }: Ch
                   </div>
                 </div>
                 <div className="chat-header-actions">
+                  <button className="reset-btn" onClick={onReset}>
+                    Build New Agent
+                  </button>
                   <button
                     className="export-btn"
                     onClick={() => setShowExportModal(true)}
@@ -379,9 +382,6 @@ export function ChatSection({ isVisible, skills, onReset, sessionId, model }: Ch
                       <line x1="12" y1="15" x2="12" y2="3" />
                     </svg>
                     Export
-                  </button>
-                  <button className="reset-btn" onClick={onReset}>
-                    Build New Agent
                   </button>
                 </div>
               </div>

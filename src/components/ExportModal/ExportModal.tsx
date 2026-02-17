@@ -19,7 +19,8 @@ function formatTokens(count: number): string {
   return count >= 1000 ? `${(count / 1000).toFixed(1)}k` : String(count);
 }
 
-const WORKSHOP_URL = 'https://github.com/NVIDIA/deep-agents-workshop';
+const WORKSHOP_URL = 'https://github.com/brevdev/workshop-build-an-agent';
+const LAUNCHABLE_URL = 'https://brev.nvidia.com/launchable/deploy?launchableID=env-32kC34ErT9wsqTcJyaKMxBEuhr2';
 
 export function ExportModal({ isOpen, onClose, model, skills, sessionTokens, toolCalls }: ExportModalProps) {
   // Escape key listener
@@ -184,22 +185,36 @@ export function ExportModal({ isOpen, onClose, model, skills, sessionTokens, too
                 <p className="cta-text">
                   You just experienced building an AI agent — now dive deeper with the full workshop.
                 </p>
-                <a
-                  className="cta-link"
-                  href={WORKSHOP_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Open Workshop on GitHub
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M7 17L17 7" />
-                    <path d="M7 7h10v10" />
-                  </svg>
-                </a>
+                <div className="cta-buttons">
+                  <a
+                    className="cta-link"
+                    href={LAUNCHABLE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Launch Workshop
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M7 17L17 7" />
+                      <path d="M7 7h10v10" />
+                    </svg>
+                  </a>
+                  <a
+                    className="cta-link-secondary"
+                    href={WORKSHOP_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    View on GitHub
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M7 17L17 7" />
+                      <path d="M7 7h10v10" />
+                    </svg>
+                  </a>
+                </div>
               </div>
               <div className="cta-qr">
                 <QRCodeSVG
-                  value={WORKSHOP_URL}
+                  value={LAUNCHABLE_URL}
                   size={120}
                   bgColor="transparent"
                   fgColor="#ffffff"
