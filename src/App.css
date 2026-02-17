@@ -276,6 +276,61 @@
   color: var(--text-primary);
 }
 
+/* Sandbox disable warning modal */
+.sandbox-warning-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 201;
+  background: var(--bg-secondary);
+  border: 2px solid var(--r400);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8);
+  width: min(440px, 90vw);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5), 0 0 30px rgba(244, 67, 54, 0.15);
+}
+
+.sandbox-warning-icon {
+  font-size: 2.5rem;
+  text-align: center;
+  margin-bottom: var(--space-3);
+}
+
+.sandbox-warning-title {
+  font-size: var(--text-xl);
+  font-weight: var(--font-bold);
+  color: var(--r400);
+  text-align: center;
+  margin: 0 0 var(--space-3);
+}
+
+.sandbox-warning-desc {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  text-align: center;
+  margin: 0 0 var(--space-6);
+  line-height: 1.5;
+}
+
+.sandbox-disable-btn {
+  flex: 1;
+  padding: var(--space-3);
+  background: rgba(244, 67, 54, 0.15);
+  color: var(--r400);
+  border: 1px solid var(--r400);
+  border-radius: var(--radius-md);
+  font-family: var(--font-family-sans);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.sandbox-disable-btn:hover {
+  background: rgba(244, 67, 54, 0.25);
+  box-shadow: 0 0 15px rgba(244, 67, 54, 0.3);
+}
+
 .header-badge {
   padding: var(--space-1) var(--space-3);
   background: var(--nvidia-green-subtle);

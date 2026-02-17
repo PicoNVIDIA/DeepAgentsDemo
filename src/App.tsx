@@ -30,6 +30,7 @@ function App() {
   const [sandboxMap, setSandboxMap] = useState<Record<string, boolean>>({});
   const [sandboxMode, setSandboxMode] = useState(false);
   const [showSandboxInfo, setShowSandboxInfo] = useState(false);
+  const [showSandboxWarning, setShowSandboxWarning] = useState(false);
 
   // Blocky Bits — only polls when visual mode is active
   const blocky = useBlockyBits(inputMode === 'visual' && (phase === 'soul' || phase === 'builder'));
@@ -133,14 +134,17 @@ function App() {
 
   const handleToggleSandboxMode = useCallback(() => {
     if (!sandboxMode) {
-      // Turning ON — show info popup
       setShowSandboxInfo(true);
     } else {
-      // Turning OFF — disable all sandboxes
-      setSandboxMode(false);
-      setSandboxMap({});
+      setShowSandboxWarning(true);
     }
   }, [sandboxMode]);
+
+  const handleConfirmDisableSandbox = useCallback(() => {
+    setSandboxMode(false);
+    setSandboxMap({});
+    setShowSandboxWarning(false);
+  }, []);
 
   const handleConfirmSandboxMode = useCallback(() => {
     setSandboxMode(true);
@@ -397,6 +401,44 @@ function App() {
                   </button>
                   <button className="sandbox-cancel" onClick={() => setShowSandboxInfo(false)}>
                     Cancel
+                  </button>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+
+        {/* Disable sandbox warning modal */}
+        <AnimatePresence>
+          {showSandboxWarning && (
+            <>
+              <motion.div
+                className="sandbox-backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowSandboxWarning(false)}
+              />
+              <motion.div
+                className="sandbox-warning-modal"
+                style={{ x: '-50%', y: '-50%' }}
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              >
+                <div className="sandbox-warning-icon">⚠️</div>
+                <h2 className="sandbox-warning-title">Disable Sandbox Mode?</h2>
+                <p className="sandbox-warning-desc">
+                  Your agent's tools will run <strong>directly on your local machine</strong> without isolation. 
+                  File writes, shell commands, and code execution will have full access to your system.
+                </p>
+                <div className="sandbox-info-buttons">
+                  <button className="sandbox-cancel" onClick={() => setShowSandboxWarning(false)}>
+                    Keep Sandbox On
+                  </button>
+                  <button className="sandbox-disable-btn" onClick={handleConfirmDisableSandbox}>
+                    ⚠️ Disable Sandbox
                   </button>
                 </div>
               </motion.div>
