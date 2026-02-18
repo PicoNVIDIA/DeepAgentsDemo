@@ -21,6 +21,7 @@ function formatTokens(count: number): string {
 
 const WORKSHOP_URL = 'https://github.com/brevdev/workshop-build-an-agent';
 const LAUNCHABLE_URL = 'https://brev.nvidia.com/launchable/deploy?launchableID=env-32kC34ErT9wsqTcJyaKMxBEuhr2';
+const TAKE_HOME_URL = 'https://example.com/';
 
 export function ExportModal({ isOpen, onClose, model, skills, sessionTokens, toolCalls }: ExportModalProps) {
   // Escape key listener
@@ -101,33 +102,35 @@ export function ExportModal({ isOpen, onClose, model, skills, sessionTokens, too
                 transition={{ delay: 0.15 }}
               >
                 <div className="export-card-label">Session Metrics</div>
-                <div className="export-metrics">
-                  <div className="export-metric">
-                    <span className="metric-value">{formatTokens(sessionTokens.reasoning)}</span>
-                    <span className="metric-label">reasoning tokens</span>
+                <div className="metrics-columns">
+                  <div className="export-metrics">
+                    <div className="export-metric">
+                      <span className="metric-value">{formatTokens(sessionTokens.reasoning)}</span>
+                      <span className="metric-label">reasoning tokens</span>
+                    </div>
+                    <div className="export-metric">
+                      <span className="metric-value">{formatTokens(sessionTokens.output - sessionTokens.reasoning)}</span>
+                      <span className="metric-label">output tokens</span>
+                    </div>
+                    <div className="export-metric">
+                      <span className="metric-value">{totalInvocations}</span>
+                      <span className="metric-label">tool invocations</span>
+                    </div>
                   </div>
-                  <div className="export-metric">
-                    <span className="metric-value">{formatTokens(sessionTokens.output - sessionTokens.reasoning)}</span>
-                    <span className="metric-label">output tokens</span>
-                  </div>
-                  <div className="export-metric">
-                    <span className="metric-value">{totalInvocations}</span>
-                    <span className="metric-label">tool invocations</span>
-                  </div>
-                </div>
 
-                {Object.keys(toolBreakdown).length > 0 && (
-                  <div className="export-tool-breakdown">
-                    <div className="breakdown-label">Tool Breakdown</div>
-                    {Object.values(toolBreakdown).map((tool) => (
-                      <div key={tool.name} className="breakdown-row">
-                        <span className="breakdown-icon">{tool.icon}</span>
-                        <span className="breakdown-name">{tool.name}</span>
-                        <span className="breakdown-count">{tool.count}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                  {Object.keys(toolBreakdown).length > 0 && (
+                    <div className="export-tool-breakdown">
+                      <div className="breakdown-label">Tool Breakdown</div>
+                      {Object.values(toolBreakdown).map((tool) => (
+                        <div key={tool.name} className="breakdown-row">
+                          <span className="breakdown-icon">{tool.icon}</span>
+                          <span className="breakdown-name">{tool.name}</span>
+                          <span className="breakdown-count">{tool.count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </motion.div>
 
               {/* Right: Agent Configuration */}
@@ -173,12 +176,59 @@ export function ExportModal({ isOpen, onClose, model, skills, sessionTokens, too
               </motion.div>
             </div>
 
+            {/* Take Your Agent Home */}
+            <motion.div
+              className="export-take-home"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+            >
+              <div className="take-home-label">Take Your Agent Home</div>
+              <div className="take-home-grid">
+                <div className="take-home-step">
+                  <div className="step-header">
+                    <div className="step-badge">1</div>
+                    <div className="step-heading">Claim Your Free Credits</div>
+                  </div>
+                  <p className="step-text">
+                    Scan the QR code at the booth to claim your complimentary Brev credits.
+                  </p>
+                  <p className="step-hint">$30 in free Brev credits — limited to first 200 users</p>
+                  <div className="step-scan-indicator">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M7 17L17 7" />
+                      <path d="M7 7h10v10" />
+                    </svg>
+                    Scan at booth
+                  </div>
+                </div>
+                <div className="take-home-step">
+                  <div className="step-header">
+                    <div className="step-badge">2</div>
+                    <div className="step-heading">Take Your Agent Home</div>
+                  </div>
+                  <p className="step-text">
+                    Scan to deploy your agent in your own Brev account.
+                  </p>
+                  <div className="step-qr">
+                    <QRCodeSVG
+                      value={TAKE_HOME_URL}
+                      size={120}
+                      bgColor="transparent"
+                      fgColor="#ffffff"
+                      level="M"
+                    />
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
             {/* CTA Footer */}
             <motion.div
               className="export-cta"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
+              transition={{ delay: 0.35 }}
             >
               <div className="cta-content">
                 <div className="cta-label">Continue Learning</div>
