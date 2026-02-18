@@ -187,6 +187,42 @@
   color: var(--text-primary);
 }
 
+/* Sandbox indicator (read-only, controlled by global toggle) */
+.chip-sandbox-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  font-size: 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-default);
+  pointer-events: none;
+  transition: all var(--transition-fast);
+}
+
+.chip-sandbox-indicator.unlocked {
+  opacity: 0.4;
+}
+
+.chip-sandbox-indicator.locked {
+  border-color: var(--accent-color);
+  background: var(--accent-subtle);
+  box-shadow: 0 0 8px var(--accent-glow);
+  opacity: 1;
+  animation: sandbox-glow 2s ease-in-out infinite;
+}
+
+@keyframes sandbox-glow {
+  0%, 100% { box-shadow: 0 0 8px var(--accent-glow); }
+  50% { box-shadow: 0 0 16px var(--accent-glow); }
+}
+
+.added-skill-chip.sandboxed {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
 .added-skill-chip .chip-tooltip {
   position: absolute;
   bottom: calc(100% + 8px);

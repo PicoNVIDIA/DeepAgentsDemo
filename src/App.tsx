@@ -14,6 +14,7 @@ import { BuildAnimation } from './components/BuildAnimation';
 import { ParticleBackground } from './components/ParticleBackground';
 import { ChatSection } from './components/ChatSection';
 import { SkillCard } from './components/SkillCard';
+import { SettingsPanel } from './components/SettingsPanel';
 import './App.css';
 
 type Phase = 'soul' | 'builder' | 'building' | 'chat';
@@ -26,6 +27,10 @@ function App() {
   const [addedSkills, setAddedSkills] = useState<Skill[]>([]);
   const [activeSkill, setActiveSkill] = useState<Skill | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sandboxMap, setSandboxMap] = useState<Record<string, boolean>>({});
+  const [sandboxMode, setSandboxMode] = useState(false);
+  const [showSandboxInfo, setShowSandboxInfo] = useState(false);
+  const [showSandboxWarning, setShowSandboxWarning] = useState(false);
 
   // Blocky Bits — only polls when visual mode is active
   const blocky = useBlockyBits(inputMode === 'visual' && (phase === 'soul' || phase === 'builder'));
@@ -124,7 +129,31 @@ function App() {
 
   const handleRemoveSkill = useCallback((skillId: string) => {
     setAddedSkills(prev => prev.filter(s => s.id !== skillId));
+    setSandboxMap(prev => { const next = { ...prev }; delete next[skillId]; return next; });
   }, []);
+
+  const handleToggleSandboxMode = useCallback(() => {
+    if (!sandboxMode) {
+      setShowSandboxInfo(true);
+    } else {
+      setShowSandboxWarning(true);
+    }
+  }, [sandboxMode]);
+
+  const handleConfirmDisableSandbox = useCallback(() => {
+    setSandboxMode(false);
+    setSandboxMap({});
+    setShowSandboxWarning(false);
+  }, []);
+
+  const handleConfirmSandboxMode = useCallback(() => {
+    setSandboxMode(true);
+    setShowSandboxInfo(false);
+    // Auto-sandbox all sandboxable tools that are already added
+    const newMap: Record<string, boolean> = {};
+    addedSkills.forEach(s => { if (s.sandboxable) newMap[s.id] = true; });
+    setSandboxMap(newMap);
+  }, [addedSkills]);
 
   const handleBuild = useCallback(() => {
     if (addedSkills.length > 0 && selectedModel) {
@@ -141,7 +170,7 @@ function App() {
     try {
       const skillIds = addedSkills.map(s => s.id);
       console.log('[App] Creating agent session:', selectedModel.id, skillIds);
-      const id = await createAgentSession(selectedModel.id, skillIds, true);
+      const id = await createAgentSession(selectedModel.id, skillIds, true, sandboxMap);
       console.log('[App] Session created:', id);
       setSessionId(id);
       setPhase('chat');
@@ -157,6 +186,8 @@ function App() {
     }
     setSessionId(null);
     setAddedSkills([]);
+    setSandboxMap({});
+    setSandboxMode(false);
     setPhase('soul');
     setSelectedModel(null);
     prevBlockySkillsRef.current = '';
@@ -170,6 +201,8 @@ function App() {
     setInputMode(mode);
     setSessionId(null);
     setAddedSkills([]);
+    setSandboxMap({});
+    setSandboxMode(false);
     setPhase('soul');
     setSelectedModel(null);
     prevBlockySkillsRef.current = '';
@@ -221,6 +254,12 @@ function App() {
                 <span>{blocky.connected ? 'Blocks Connected' : 'Waiting for Blocks...'}</span>
               </div>
             )}
+            {/* Sandbox indicator in header — show on chat only */}
+            {phase === 'chat' && (
+              <span className={`sandbox-mode-badge ${sandboxMode ? 'on' : 'off'}`}>
+                {sandboxMode ? '🔒 Sandboxed' : '⚠️ No Sandbox'}
+              </span>
+            )}
             <div className="header-badge" style={selectedModel ? { borderColor: selectedModel.primaryColor, color: selectedModel.primaryColor, background: selectedModel.subtleColor } : undefined}>
               {selectedModel ? `${selectedModel.name} · GTC 2026` : 'GTC 2026 Demo'}
             </div>
@@ -260,6 +299,7 @@ function App() {
                     isBuilding={phase === 'building'}
                     isReady={false}
                     onRemoveSkill={handleRemoveSkill}
+                    sandboxMap={sandboxMap}
                   />
                   
                   <BuildButton
@@ -270,6 +310,13 @@ function App() {
                     skillCount={addedSkills.length}
                   />
                 </div>
+
+                <SettingsPanel
+                  sandboxMode={sandboxMode}
+                  onToggleSandbox={handleToggleSandboxMode}
+                  skills={addedSkills}
+                  sandboxMap={sandboxMap}
+                />
               </motion.div>
             )}
 
@@ -298,6 +345,107 @@ function App() {
           isActive={phase === 'building'}
           onComplete={handleBuildComplete}
         />
+
+        {/* Sandbox info modal */}
+        <AnimatePresence>
+          {showSandboxInfo && (
+            <>
+              <motion.div
+                className="sandbox-backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowSandboxInfo(false)}
+              />
+              <motion.div
+                className="sandbox-info-modal"
+                style={{ x: '-50%', y: '-50%' }}
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              >
+                <div className="sandbox-info-icon">🔒</div>
+                <h2 className="sandbox-info-title">Enable Sandbox Mode?</h2>
+                <p className="sandbox-info-desc">
+                  Sandbox mode runs your agent's tools inside an <strong>isolated Docker container</strong> powered by <a href="https://www.daytona.io/" target="_blank" rel="noreferrer">Daytona</a>.
+                </p>
+                <div className="sandbox-info-benefits">
+                  <div className="sandbox-benefit">
+                    <span className="benefit-icon">🛡️</span>
+                    <div>
+                      <strong>Isolated Execution</strong>
+                      <p>File writes, shell commands, and code run in a sandboxed container — not on your machine.</p>
+                    </div>
+                  </div>
+                  <div className="sandbox-benefit">
+                    <span className="benefit-icon">🔐</span>
+                    <div>
+                      <strong>Credential Protection</strong>
+                      <p>API keys and local files stay outside the sandbox. The agent can't access your host system.</p>
+                    </div>
+                  </div>
+                  <div className="sandbox-benefit">
+                    <span className="benefit-icon">🧹</span>
+                    <div>
+                      <strong>Clean Slate</strong>
+                      <p>Each session gets a fresh container. No leftover files or state from previous runs.</p>
+                    </div>
+                  </div>
+                </div>
+                <p className="sandbox-info-note">
+                  Requires Docker running locally + Daytona server. Without it, tools fall back to local execution.
+                </p>
+                <div className="sandbox-info-buttons">
+                  <button className="sandbox-confirm" onClick={handleConfirmSandboxMode}>
+                    🔒 Enable Sandbox Mode
+                  </button>
+                  <button className="sandbox-cancel" onClick={() => setShowSandboxInfo(false)}>
+                    Cancel
+                  </button>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+
+        {/* Disable sandbox warning modal */}
+        <AnimatePresence>
+          {showSandboxWarning && (
+            <>
+              <motion.div
+                className="sandbox-backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowSandboxWarning(false)}
+              />
+              <motion.div
+                className="sandbox-warning-modal"
+                style={{ x: '-50%', y: '-50%' }}
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              >
+                <div className="sandbox-warning-icon">⚠️</div>
+                <h2 className="sandbox-warning-title">Disable Sandbox Mode?</h2>
+                <p className="sandbox-warning-desc">
+                  Your agent's tools will run <strong>directly on your local machine</strong> without isolation. 
+                  File writes, shell commands, and code execution will have full access to your system.
+                </p>
+                <div className="sandbox-info-buttons">
+                  <button className="sandbox-cancel" onClick={() => setShowSandboxWarning(false)}>
+                    Keep Sandbox On
+                  </button>
+                  <button className="sandbox-disable-btn" onClick={handleConfirmDisableSandbox}>
+                    ⚠️ Disable Sandbox
+                  </button>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
 
         {/* Drag overlay */}
         <DragOverlay>

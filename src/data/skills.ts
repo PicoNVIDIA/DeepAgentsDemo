@@ -5,6 +5,7 @@ export interface Skill {
   category: string;
   icon: string;
   sampleQuestions?: string[];
+  sandboxable?: boolean;
 }
 
 export const skills: Skill[] = [
@@ -16,6 +17,7 @@ export const skills: Skill[] = [
     category: 'tools',
     icon: '🌐',
     sampleQuestions: ['What is in the news for today?', "What's new at GTC 2026?"],
+    sandboxable: true,
   },
   {
     id: 'fileio',
@@ -24,6 +26,7 @@ export const skills: Skill[] = [
     category: 'tools',
     icon: '📁',
     sampleQuestions: ['List all Python files in the workspace', 'List all files in the current folder'],
+    sandboxable: true,
   },
   {
     id: 'execute',
@@ -32,8 +35,9 @@ export const skills: Skill[] = [
     category: 'tools',
     icon: '💻',
     sampleQuestions: ['Run nvidia-smi and show GPU status', 'Write and run a Python hello world script'],
+    sandboxable: true,
   },
-  // Skills (loaded as methodology/instructions)
+  // Skills (loaded as methodology/instructions — not sandboxable)
   {
     id: 'superpowers',
     name: 'Superpowers',
@@ -41,6 +45,7 @@ export const skills: Skill[] = [
     category: 'skills',
     icon: '⚡',
     sampleQuestions: ['Help me plan a REST API project with TDD', 'Debug this error using TDD methodology'],
+    sandboxable: false,
   },
   {
     id: 'cudf',
@@ -49,6 +54,7 @@ export const skills: Skill[] = [
     category: 'skills',
     icon: '🟩',
     sampleQuestions: ['Show me how to load a CSV with cuDF', 'Use cuDF to generate a dataframe with randomized data'],
+    sandboxable: false,
   },
   {
     id: 'code_review',
@@ -57,6 +63,7 @@ export const skills: Skill[] = [
     category: 'skills',
     icon: '🔍',
     sampleQuestions: ['Review this code: def add(a,b): return a+b', 'Review this code def is_even(n): return n % 2'],
+    sandboxable: false,
   },
 ];
 
