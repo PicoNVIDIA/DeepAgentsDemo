@@ -102,33 +102,35 @@ export function ExportModal({ isOpen, onClose, model, skills, sessionTokens, too
                 transition={{ delay: 0.15 }}
               >
                 <div className="export-card-label">Session Metrics</div>
-                <div className="export-metrics">
-                  <div className="export-metric">
-                    <span className="metric-value">{formatTokens(sessionTokens.reasoning)}</span>
-                    <span className="metric-label">reasoning tokens</span>
+                <div className="metrics-columns">
+                  <div className="export-metrics">
+                    <div className="export-metric">
+                      <span className="metric-value">{formatTokens(sessionTokens.reasoning)}</span>
+                      <span className="metric-label">reasoning tokens</span>
+                    </div>
+                    <div className="export-metric">
+                      <span className="metric-value">{formatTokens(sessionTokens.output - sessionTokens.reasoning)}</span>
+                      <span className="metric-label">output tokens</span>
+                    </div>
+                    <div className="export-metric">
+                      <span className="metric-value">{totalInvocations}</span>
+                      <span className="metric-label">tool invocations</span>
+                    </div>
                   </div>
-                  <div className="export-metric">
-                    <span className="metric-value">{formatTokens(sessionTokens.output - sessionTokens.reasoning)}</span>
-                    <span className="metric-label">output tokens</span>
-                  </div>
-                  <div className="export-metric">
-                    <span className="metric-value">{totalInvocations}</span>
-                    <span className="metric-label">tool invocations</span>
-                  </div>
-                </div>
 
-                {Object.keys(toolBreakdown).length > 0 && (
-                  <div className="export-tool-breakdown">
-                    <div className="breakdown-label">Tool Breakdown</div>
-                    {Object.values(toolBreakdown).map((tool) => (
-                      <div key={tool.name} className="breakdown-row">
-                        <span className="breakdown-icon">{tool.icon}</span>
-                        <span className="breakdown-name">{tool.name}</span>
-                        <span className="breakdown-count">{tool.count}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                  {Object.keys(toolBreakdown).length > 0 && (
+                    <div className="export-tool-breakdown">
+                      <div className="breakdown-label">Tool Breakdown</div>
+                      {Object.values(toolBreakdown).map((tool) => (
+                        <div key={tool.name} className="breakdown-row">
+                          <span className="breakdown-icon">{tool.icon}</span>
+                          <span className="breakdown-name">{tool.name}</span>
+                          <span className="breakdown-count">{tool.count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </motion.div>
 
               {/* Right: Agent Configuration */}

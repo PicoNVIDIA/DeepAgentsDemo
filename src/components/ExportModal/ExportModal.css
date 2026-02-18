@@ -67,6 +67,25 @@
   margin-bottom: var(--space-3);
 }
 
+/* Metrics columns */
+.metrics-columns {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.metrics-columns::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-0.5px);
+  width: 1px;
+  background: var(--border-default);
+}
+
 /* Metrics */
 .export-metrics {
   display: flex;
@@ -81,7 +100,7 @@
 }
 
 .metric-value {
-  font-size: var(--text-lg);
+  font-size: 1.125rem;
   font-weight: var(--font-bold);
   font-family: var(--font-family-mono);
   color: var(--text-primary);
@@ -94,9 +113,7 @@
 
 /* Tool breakdown */
 .export-tool-breakdown {
-  margin-top: var(--space-4);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--border-default);
+  padding-left: var(--space-2);
 }
 
 .breakdown-label {
@@ -111,7 +128,7 @@
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-1) 0;
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
 }
 
 .breakdown-icon {
@@ -415,6 +432,14 @@
 
   .export-modal {
     padding: var(--space-5);
+  }
+
+  .metrics-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .metrics-columns::before {
+    display: none;
   }
 
   .take-home-grid {
