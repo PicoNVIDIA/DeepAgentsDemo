@@ -6,3 +6,5 @@ tavily-python
 langchain-nvidia-ai-endpoints
 langchain-community
 python-dotenv
+# Sandbox support (Docker-based)
+docker

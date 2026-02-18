@@ -14,8 +14,9 @@ from langgraph.checkpoint.memory import MemorySaver
 from langchain_nvidia_ai_endpoints import ChatNVIDIA
 
 
-# Workspace directory for file operations
-WORKSPACE_DIR = "/tmp/deepagent_workspace"
+# Workspace directories
+WORKSPACE_DIR = "/tmp/deepagent_workspace"            # Local (has sensitive files for demo)
+SANDBOX_WORKSPACE_DIR = "/workspace"                  # Path INSIDE Docker container
 os.makedirs(WORKSPACE_DIR, exist_ok=True)
 
 # Skills directory
@@ -107,9 +108,10 @@ def _get_skill_sources() -> list[str]:
     return []
 
 
-def _build_system_prompt(skill_ids: list[str], model_id: str, hitl_enabled: bool) -> str:
+def _build_system_prompt(skill_ids: list[str], model_id: str, hitl_enabled: bool, sandbox_enabled: bool = False) -> str:
     """Create a system prompt that includes the selected capabilities and skills."""
     model_name = MODEL_DISPLAY_NAMES.get(model_id, "AI Model")
+    workspace = SANDBOX_WORKSPACE_DIR if sandbox_enabled else WORKSPACE_DIR
 
     enabled = []
     if "websearch" in skill_ids:
@@ -144,39 +146,75 @@ Your enabled capabilities:
 
 CRITICAL RULES:
 1. Answer the user's question DIRECTLY. Do NOT use the 'task' tool — respond yourself.
-2. File tools require ABSOLUTE paths. Your workspace is: {WORKSPACE_DIR}
-   Always use paths like: {WORKSPACE_DIR}/hello.py
+2. File tools require ABSOLUTE paths. Your workspace is: {workspace}
+   Always use paths like: {workspace}/hello.py
 3. Use web search when the user asks for current information.
 4. Be concise and technically accurate.
 5. You are running on NVIDIA infrastructure.
 {hitl_note}{skill_section}"""
 
 
-def create_agent(
-    skill_ids: list[str] | None = None,
-    model_id: str = "llama",
-    hitl_enabled: bool = False,
-):
-    """Create a Deep Agent with optional human-in-the-loop and skills."""
-    if skill_ids is None:
-        skill_ids = []
+def _build_backend(skill_ids: list[str], sandbox_map: dict[str, bool]):
+    """
+    Build the execution backend.
+    If any tools are sandboxed, spin up a real Docker container.
+    Otherwise use LocalShellBackend or FilesystemBackend.
+    Returns (backend, sandbox_instance_or_None).
+    """
+    any_sandboxed = any(sandbox_map.get(sid, False) for sid in skill_ids)
 
-    model = _get_model(model_id)
-    extra_tools = _build_extra_tools(skill_ids)
-    system_prompt = _build_system_prompt(skill_ids, model_id, hitl_enabled)
-    skill_sources = _get_skill_sources()
+    if any_sandboxed:
+        try:
+            from docker_sandbox import DockerSandboxBackend
 
-    # Build backend: LocalShellBackend includes file ops + execute
+            backend = DockerSandboxBackend()
+            sandboxed_tools = [k for k, v in sandbox_map.items() if v]
+            print(f"[Agent] Docker sandbox created for tools: {sandboxed_tools}")
+            return backend, backend  # backend IS the sandbox (has .delete())
+        except Exception as e:
+            print(f"[Agent] WARNING: Failed to create Docker sandbox: {e}. Falling back to local.")
+
+    # No sandbox — local execution
+    workspace = WORKSPACE_DIR
+    print(f"[Agent] Sandbox mode OFF — using local workspace: {workspace}")
+
     if "execute" in skill_ids:
         backend = LocalShellBackend(
-            root_dir=WORKSPACE_DIR,
+            root_dir=workspace,
             timeout=60.0,
             max_output_bytes=50000,
             inherit_env=True,
         )
         print("[Agent] Shell execution enabled via LocalShellBackend")
     else:
-        backend = FilesystemBackend(root_dir=WORKSPACE_DIR)
+        backend = FilesystemBackend(root_dir=workspace)
+        print("[Agent] Using FilesystemBackend")
+
+    return backend, None
+
+
+def create_agent(
+    skill_ids: list[str] | None = None,
+    model_id: str = "llama",
+    hitl_enabled: bool = False,
+    sandbox_map: dict[str, bool] | None = None,
+):
+    """
+    Create a Deep Agent with optional sandboxing, human-in-the-loop, and skills.
+    Returns (agent, sandbox_instance_or_None).
+    """
+    if skill_ids is None:
+        skill_ids = []
+    if sandbox_map is None:
+        sandbox_map = {}
+
+    model = _get_model(model_id)
+    extra_tools = _build_extra_tools(skill_ids)
+    any_sandboxed = any(sandbox_map.get(sid, False) for sid in skill_ids)
+    system_prompt = _build_system_prompt(skill_ids, model_id, hitl_enabled, any_sandboxed)
+    skill_sources = _get_skill_sources()
+
+    backend, sandbox = _build_backend(skill_ids, sandbox_map)
 
     agent_kwargs: dict = {
         "model": model,
@@ -193,5 +231,6 @@ def create_agent(
         agent_kwargs["skills"] = skill_sources
 
     agent = create_deep_agent(**agent_kwargs)
-    print(f"[Agent] Created deep agent: skills={skill_ids}, hitl={hitl_enabled}, skill_sources={skill_sources}")
-    return agent
+    sandboxed = [k for k, v in sandbox_map.items() if v]
+    print(f"[Agent] Created deep agent: skills={skill_ids}, hitl={hitl_enabled}, sandboxed={sandboxed}")
+    return agent, sandbox

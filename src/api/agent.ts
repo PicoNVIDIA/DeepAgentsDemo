@@ -25,11 +25,12 @@ export async function createAgentSession(
   modelId: string,
   skillIds: string[],
   hitlEnabled: boolean = false,
+  sandboxMap: Record<string, boolean> = {},
 ): Promise<string> {
   const response = await fetch('/api/agent', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model_id: modelId, skill_ids: skillIds, hitl_enabled: hitlEnabled }),
+    body: JSON.stringify({ model_id: modelId, skill_ids: skillIds, hitl_enabled: hitlEnabled, sandbox_map: sandboxMap }),
   });
   if (!response.ok) throw new Error(`Failed to create agent: ${await response.text()}`);
   const data = await response.json();

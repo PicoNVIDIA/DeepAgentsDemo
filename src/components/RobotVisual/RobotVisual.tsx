@@ -1,3 +1,4 @@
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Skill } from '../../data/skills';
 import './RobotVisual.css';
@@ -12,9 +13,36 @@ interface RobotVisualProps {
 export function RobotVisual({ skills, isBuilding, isReady, accentColor = '#76B900' }: RobotVisualProps) {
   const hasSkills = skills.length > 0;
   const c = accentColor;
+  const [eyeOffset, setEyeOffset] = useState({ x: 0, y: 0 });
+  const containerRef = useCallback((node: HTMLDivElement | null) => {
+    if (node) containerNodeRef.current = node;
+  }, []);
+  const containerNodeRef = { current: null as HTMLDivElement | null };
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    const el = document.querySelector('.robot-container');
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    // Use the robot's center as reference
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    // Distance from robot center, normalized
+    const dx = (e.clientX - cx) / (window.innerWidth / 2);
+    const dy = (e.clientY - cy) / (window.innerHeight / 2);
+    // Clamp to max movement
+    setEyeOffset({
+      x: Math.max(-4, Math.min(4, dx * 4)),
+      y: Math.max(-3, Math.min(3, dy * 3)),
+    });
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, [handleMouseMove]);
 
   return (
-    <div className={`robot-container ${isBuilding ? 'building' : ''} ${isReady ? 'ready' : ''}`}>
+    <div ref={containerRef} className={`robot-container ${isBuilding ? 'building' : ''} ${isReady ? 'ready' : ''}`}>
       {/* Ambient glow behind robot */}
       <div className={`robot-ambient-glow ${hasSkills ? 'active' : ''}`} />
       
@@ -135,16 +163,16 @@ export function RobotVisual({ skills, isBuilding, isReady, accentColor = '#76B90
                 : { duration: 5, repeat: Infinity, ease: 'easeInOut', times: [0, 0.3, 0.38, 0.4, 0.42, 0.6, 0.78, 0.8, 0.81, 0.82, 0.84, 0.86] }
               }
             />
-            {/* Eye highlights — hide during blink */}
+            {/* Eye highlights — follow cursor + hide during blink */}
             <motion.ellipse
-              cx="78" cy="46" rx="4"
-              fill="rgba(255,255,255,0.3)"
+              cx={78 + eyeOffset.x} cy={46 + eyeOffset.y} rx="4"
+              fill="rgba(255,255,255,0.4)"
               animate={isBuilding ? {} : { ry: [5, 5, 5, 0, 5, 5, 5, 5, 5, 0, 0, 5] }}
               transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', times: [0, 0.3, 0.38, 0.4, 0.42, 0.6, 0.78, 0.8, 0.81, 0.82, 0.84, 0.86] }}
             />
             <motion.ellipse
-              cx="128" cy="46" rx="4"
-              fill="rgba(255,255,255,0.3)"
+              cx={128 + eyeOffset.x} cy={46 + eyeOffset.y} rx="4"
+              fill="rgba(255,255,255,0.4)"
               animate={isBuilding ? {} : { ry: [5, 5, 5, 0, 5, 5, 5, 5, 5, 0, 0, 5] }}
               transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', times: [0, 0.3, 0.38, 0.4, 0.42, 0.6, 0.78, 0.8, 0.81, 0.82, 0.84, 0.86] }}
             />
