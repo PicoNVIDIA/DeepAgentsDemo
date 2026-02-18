@@ -121,7 +121,7 @@ async def delete_agent_session(session_id: str):
     """Destroy an agent session and its sandbox if any."""
     if session_id in sessions:
         session = sessions[session_id]
-        # Clean up Daytona sandbox
+        # Clean up Docker sandbox container
         if session.sandbox:
             try:
                 session.sandbox.delete()

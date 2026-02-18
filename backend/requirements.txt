@@ -6,6 +6,5 @@ tavily-python
 langchain-nvidia-ai-endpoints
 langchain-community
 python-dotenv
-# Sandbox support (optional - install when using Daytona)
-# daytona-sdk
-# langchain-daytona
+# Sandbox support (Docker-based)
+docker

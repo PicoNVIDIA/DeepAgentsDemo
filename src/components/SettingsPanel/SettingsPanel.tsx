@@ -78,7 +78,7 @@ export function SettingsPanel({ sandboxMode, onToggleSandbox, skills, sandboxMap
           <div className="sandbox-info-box">
             <div className="sandbox-info-row">
               <span>🛡️</span>
-              <span>Isolated execution in Docker via <a href="https://www.daytona.io/" target="_blank" rel="noreferrer">Daytona</a></span>
+              <span>Isolated execution in <a href="https://www.docker.com/" target="_blank" rel="noreferrer">Docker</a> containers</span>
             </div>
             <div className="sandbox-info-row">
               <span>🔐</span>

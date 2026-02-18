@@ -123,9 +123,13 @@ function App() {
       const skill = allSkills.find(s => s.id === active.id);
       if (skill && !addedSkills.find(s => s.id === skill.id)) {
         setAddedSkills(prev => [...prev, skill]);
+        // Auto-sandbox new sandboxable skills when sandbox mode is ON
+        if (sandboxMode && skill.sandboxable) {
+          setSandboxMap(prev => ({ ...prev, [skill.id]: true }));
+        }
       }
     }
-  }, [addedSkills]);
+  }, [addedSkills, sandboxMode]);
 
   const handleRemoveSkill = useCallback((skillId: string) => {
     setAddedSkills(prev => prev.filter(s => s.id !== skillId));
@@ -169,7 +173,7 @@ function App() {
 
     try {
       const skillIds = addedSkills.map(s => s.id);
-      console.log('[App] Creating agent session:', selectedModel.id, skillIds);
+      console.log('[App] Creating agent session:', selectedModel.id, skillIds, 'sandboxMap:', sandboxMap);
       const id = await createAgentSession(selectedModel.id, skillIds, true, sandboxMap);
       console.log('[App] Session created:', id);
       setSessionId(id);
@@ -178,7 +182,7 @@ function App() {
       console.error('[App] Failed to create agent session:', err);
       setPhase('chat');
     }
-  }, [selectedModel, addedSkills]);
+  }, [selectedModel, addedSkills, sandboxMap]);
 
   const handleReset = useCallback(() => {
     if (sessionId) {

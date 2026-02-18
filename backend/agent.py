@@ -16,9 +16,8 @@ from langchain_nvidia_ai_endpoints import ChatNVIDIA
 
 # Workspace directories
 WORKSPACE_DIR = "/tmp/deepagent_workspace"            # Local (has sensitive files for demo)
-SANDBOX_WORKSPACE_DIR = "/tmp/deepagent_sandbox"      # Clean workspace when sandbox enabled
+SANDBOX_WORKSPACE_DIR = "/workspace"                  # Path INSIDE Docker container
 os.makedirs(WORKSPACE_DIR, exist_ok=True)
-os.makedirs(SANDBOX_WORKSPACE_DIR, exist_ok=True)
 
 # Skills directory
 SKILLS_DIR = os.path.join(os.path.dirname(__file__), "skills")
@@ -158,7 +157,7 @@ CRITICAL RULES:
 def _build_backend(skill_ids: list[str], sandbox_map: dict[str, bool]):
     """
     Build the execution backend.
-    If any tools are sandboxed, use DaytonaSandbox (local Docker).
+    If any tools are sandboxed, spin up a real Docker container.
     Otherwise use LocalShellBackend or FilesystemBackend.
     Returns (backend, sandbox_instance_or_None).
     """
@@ -166,27 +165,18 @@ def _build_backend(skill_ids: list[str], sandbox_map: dict[str, bool]):
 
     if any_sandboxed:
         try:
-            from daytona_sdk import Daytona
-            from langchain_daytona import DaytonaSandbox
+            from docker_sandbox import DockerSandboxBackend
 
-            daytona = Daytona()  # Connects to local Daytona server
-            sandbox = daytona.create()
-            backend = DaytonaSandbox(sandbox=sandbox)
+            backend = DockerSandboxBackend()
             sandboxed_tools = [k for k, v in sandbox_map.items() if v]
-            print(f"[Agent] Daytona sandbox created for tools: {sandboxed_tools}")
-            return backend, sandbox
-        except ImportError:
-            print("[Agent] WARNING: daytona-sdk/langchain-daytona not installed. Falling back to local execution.")
+            print(f"[Agent] Docker sandbox created for tools: {sandboxed_tools}")
+            return backend, backend  # backend IS the sandbox (has .delete())
         except Exception as e:
-            print(f"[Agent] WARNING: Failed to create Daytona sandbox: {e}. Falling back to local.")
+            print(f"[Agent] WARNING: Failed to create Docker sandbox: {e}. Falling back to local.")
 
-    # If sandbox mode is on but Daytona isn't available, use a clean local directory
-    if any_sandboxed:
-        workspace = SANDBOX_WORKSPACE_DIR
-        print(f"[Agent] Sandbox mode ON — using clean workspace: {workspace}")
-    else:
-        workspace = WORKSPACE_DIR
-        print(f"[Agent] Sandbox mode OFF — using local workspace: {workspace}")
+    # No sandbox — local execution
+    workspace = WORKSPACE_DIR
+    print(f"[Agent] Sandbox mode OFF — using local workspace: {workspace}")
 
     if "execute" in skill_ids:
         backend = LocalShellBackend(
