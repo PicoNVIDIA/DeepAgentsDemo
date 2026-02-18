@@ -1,10 +1,12 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Skill } from '../../data/skills';
+import type { ModelDef } from '../../data/models';
 import type { ToolCall } from '../ToolCallsPanel';
 import { ToolCallsPanel } from '../ToolCallsPanel';
+import { ExportModal } from '../ExportModal';
 import { sendMessage, sendApproval } from '../../api/agent';
 import type { InterruptEvent } from '../../api/agent';
 import './ChatSection.css';
@@ -30,9 +32,14 @@ interface ChatSectionProps {
   skills: Skill[];
   onReset: () => void;
   sessionId: string | null;
+  model: ModelDef;
 }
 
-export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSectionProps) {
+function formatTokens(count: number): string {
+  return count >= 1000 ? `${(count / 1000).toFixed(1)}k` : String(count);
+}
+
+export function ChatSection({ isVisible, skills, onReset, sessionId, model }: ChatSectionProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -42,6 +49,9 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
   const [activeTraces, setActiveTraces] = useState<TraceItem[]>([]);
   const tracesRef = useRef<TraceItem[]>([]);
   const [pendingInterrupt, setPendingInterrupt] = useState<InterruptEvent | null>(null);
+  const [sessionTokens, setSessionTokens] = useState<{ input: number; output: number; total: number; reasoning: number }>({ input: 0, output: 0, total: 0, reasoning: 0 });
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [usedQuestions, setUsedQuestions] = useState<Set<string>>(new Set());
   const interruptRef = useRef<boolean>(false); // ref copy for capturing into messages
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -71,8 +81,28 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
     }
   }, [isVisible]);
 
-  const handleSend = useCallback(async () => {
-    if (!input.trim() || isTyping) return;
+  // Pick one random question per enabled skill, shuffle, take up to 3
+  const suggestedQuestions = useMemo(() => {
+    const questions: string[] = [];
+    for (const skill of skills) {
+      if (skill.sampleQuestions && skill.sampleQuestions.length > 0) {
+        const idx = Math.floor(Math.random() * skill.sampleQuestions.length);
+        questions.push(skill.sampleQuestions[idx]);
+      }
+    }
+    // Fisher-Yates shuffle
+    for (let i = questions.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [questions[i], questions[j]] = [questions[j], questions[i]];
+    }
+    return questions.slice(0, 3);
+  }, [skills]);
+
+  const remainingQuestions = suggestedQuestions.filter(q => !usedQuestions.has(q));
+
+  const handleSend = useCallback(async (overrideText?: string) => {
+    const text = overrideText ?? input;
+    if (!text.trim() || isTyping) return;
 
     if (!sessionId) {
       setMessages(prev => [...prev, {
@@ -87,12 +117,12 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
     const userMessage: Message = {
       id: `user-${Date.now()}`,
       role: 'user',
-      content: input,
+      content: text,
       timestamp: new Date(),
     };
 
     setMessages(prev => [...prev, userMessage]);
-    const currentInput = input;
+    const currentInput = text;
     setInput('');
     setIsTyping(true);
     setStreamingContent('');
@@ -176,6 +206,15 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
           case 'error':
             fullContent += `\n\n⚠️ Error: ${event.message}`;
             setStreamingContent(fullContent);
+            break;
+
+          case 'usage':
+            setSessionTokens(prev => ({
+              input: prev.input + event.inputTokens,
+              output: prev.output + event.outputTokens,
+              total: prev.total + event.totalTokens,
+              reasoning: prev.reasoning + event.reasoningTokens,
+            }));
             break;
 
           case 'interrupt':
@@ -262,6 +301,14 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
             tracesRef.current = tracesRef.current.map(t => t.id === event.id ? { ...t, status: 'done' as const, duration: event.duration } : t);
             setActiveTraces(tracesRef.current);
             break;
+          case 'usage':
+            setSessionTokens(prev => ({
+              input: prev.input + event.inputTokens,
+              output: prev.output + event.outputTokens,
+              total: prev.total + event.totalTokens,
+              reasoning: prev.reasoning + event.reasoningTokens,
+            }));
+            break;
           case 'interrupt':
             interruptRef.current = true;
             setPendingInterrupt(event as InterruptEvent);
@@ -341,9 +388,23 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
                     )}
                   </div>
                 </div>
-                <button className="reset-btn" onClick={onReset}>
-                  Build New Agent
-                </button>
+                <div className="chat-header-actions">
+                  <button className="reset-btn" onClick={onReset}>
+                    Build New Agent
+                  </button>
+                  <button
+                    className="export-btn"
+                    onClick={() => setShowExportModal(true)}
+                    disabled={sessionTokens.total === 0}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    Export
+                  </button>
+                </div>
               </div>
 
               {/* Messages */}
@@ -489,6 +550,35 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
                   )}
                 </AnimatePresence>
                 
+                <AnimatePresence>
+                  {!isTyping && remainingQuestions.length > 0 && (
+                    <motion.div
+                      className="suggested-questions"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                    >
+                      {remainingQuestions.map((question, index) => (
+                        <motion.button
+                          key={question}
+                          className="suggested-question-pill"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.1 }}
+                          whileHover={{ scale: 1.03 }}
+                          whileTap={{ scale: 0.97 }}
+                          onClick={() => {
+                            setUsedQuestions(prev => new Set(prev).add(question));
+                            handleSend(question);
+                          }}
+                        >
+                          {question}
+                        </motion.button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
                 <div ref={messagesEndRef} />
               </div>
 
@@ -507,7 +597,7 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
                   />
                   <button 
                     className="send-btn"
-                    onClick={handleSend}
+                    onClick={() => handleSend()}
                     disabled={!input.trim() || isTyping}
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -516,9 +606,19 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
                     </svg>
                   </button>
                 </div>
-                <p className="chat-hint">
-                  Try: "Search for GPU optimization tips" · "What's new at GTC 2026?" · "Write some code"
-                </p>
+                {sessionTokens.total > 0 && (
+                  <div className="token-counter">
+                    {sessionTokens.reasoning > 0 ? (
+                      <span className="token-counter-group">
+                        <span>~{formatTokens(sessionTokens.reasoning)} <span className="token-label">reasoning</span></span>
+                        <span className="token-separator">&middot;</span>
+                        <span>~{formatTokens(sessionTokens.output - sessionTokens.reasoning)} <span className="token-label">output</span></span>
+                      </span>
+                    ) : (
+                      <>~{formatTokens(sessionTokens.total)} tokens generated</>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -529,6 +629,15 @@ export function ChatSection({ isVisible, skills, onReset, sessionId }: ChatSecti
               activeToolId={activeToolId}
             />
           </div>
+
+          <ExportModal
+            isOpen={showExportModal}
+            onClose={() => setShowExportModal(false)}
+            model={model}
+            skills={skills}
+            sessionTokens={sessionTokens}
+            toolCalls={toolCalls}
+          />
         </motion.div>
       )}
     </AnimatePresence>

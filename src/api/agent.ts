@@ -13,8 +13,9 @@ export interface InterruptEvent {
   actionRequests: Array<{ name: string; args: Record<string, unknown>; description: string }>;
   allowedDecisions: string[];
 }
+export interface UsageEvent { type: 'usage'; inputTokens: number; outputTokens: number; totalTokens: number; reasoningTokens: number; }
 
-export type AgentEvent = TokenEvent | ToolStartEvent | ToolEndEvent | ErrorEvent | DoneEvent | InterruptEvent;
+export type AgentEvent = TokenEvent | ToolStartEvent | ToolEndEvent | ErrorEvent | DoneEvent | InterruptEvent | UsageEvent;
 
 interface ChatMessage { role: 'user' | 'agent'; content: string; }
 
@@ -142,6 +143,15 @@ async function _parseSSE(response: Response, onEvent: (event: AgentEvent) => voi
                 type: 'interrupt',
                 actionRequests: parsed.action_requests || [],
                 allowedDecisions: parsed.review_configs?.[0]?.allowed_decisions || ['approve', 'reject'],
+              });
+              break;
+            case 'usage':
+              onEvent({
+                type: 'usage',
+                inputTokens: parsed.input_tokens || 0,
+                outputTokens: parsed.output_tokens || 0,
+                totalTokens: parsed.total_tokens || 0,
+                reasoningTokens: parsed.reasoning_tokens || 0,
               });
               break;
           }

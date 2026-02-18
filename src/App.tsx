@@ -332,11 +332,12 @@ function App() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.4, delay: 0.2 }}
               >
-                <ChatSection 
+                <ChatSection
                   isVisible={phase === 'chat'}
                   skills={addedSkills}
                   onReset={handleReset}
                   sessionId={sessionId}
+                  model={selectedModel!}
                 />
               </motion.div>
             )}
