@@ -7,10 +7,6 @@ description: Install and set up NVIDIA cuOpt including pip, conda, Docker, and G
 
 Set up NVIDIA cuOpt for GPU-accelerated optimization.
 
-## Before You Start: Required Questions
-
-**Ask these if not already clear:**
-
 ## System Requirements
 
 ### GPU Requirements
