@@ -57,6 +57,18 @@ export const skills: Skill[] = [
     sandboxable: false,
   },
   {
+    id: 'cuopt',
+    name: 'cuOpt',
+    description: 'GPU-accelerated route optimization (NVIDIA)',
+    category: 'skills',
+    icon: '🚚',
+    sampleQuestions: [
+      'How do I install and use the NVIDIA cuOpt library in Python?',
+      'Show me a vehicle routing problem (VRP) example using the Python API',
+    ],
+    sandboxable: false,
+  },
+  {
     id: 'code_review',
     name: 'Code Review',
     description: 'Systematic code quality & correctness analysis',
