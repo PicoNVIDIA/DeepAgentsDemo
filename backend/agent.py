@@ -87,6 +87,7 @@ def _load_skill_content(skill_ids: list[str]) -> str:
         "superpowers": "superpowers.md",
         "cudf": "cudf.md",
         "code_review": "code_review.md",
+        "cuopt": "cuopt.md",
     }
 
     for sid in skill_ids:
