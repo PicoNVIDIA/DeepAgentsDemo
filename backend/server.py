@@ -43,7 +43,7 @@ class AgentSession:
         self.skill_ids = skill_ids
         self.thread_id = thread_id
         self.hitl_enabled = hitl_enabled
-        self.sandbox = sandbox  # Daytona sandbox reference for cleanup
+        self.sandbox = sandbox  # Docker sandbox reference for cleanup
         self.messages: list = []
         self.pending_interrupt: dict | None = None
         self.created_at = time.time()
