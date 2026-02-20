@@ -372,7 +372,7 @@ function App() {
                 <div className="sandbox-info-icon">🔒</div>
                 <h2 className="sandbox-info-title">Enable Sandbox Mode?</h2>
                 <p className="sandbox-info-desc">
-                  Sandbox mode runs your agent's tools inside an <strong>isolated Docker container</strong> powered by <a href="https://www.daytona.io/" target="_blank" rel="noreferrer">Daytona</a>.
+                  Sandbox mode runs your agent's tools inside an <strong>isolated <a href="https://www.docker.com/" target="_blank" rel="noreferrer">Docker</a> container</strong> — complete filesystem isolation.
                 </p>
                 <div className="sandbox-info-benefits">
                   <div className="sandbox-benefit">
@@ -398,7 +398,7 @@ function App() {
                   </div>
                 </div>
                 <p className="sandbox-info-note">
-                  Requires Docker running locally + Daytona server. Without it, tools fall back to local execution.
+                  Requires Docker running locally. Without it, tools fall back to local execution.
                 </p>
                 <div className="sandbox-info-buttons">
                   <button className="sandbox-confirm" onClick={handleConfirmSandboxMode}>
