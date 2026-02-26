@@ -31,6 +31,9 @@ function App() {
   const [sandboxMode, setSandboxMode] = useState(false);
   const [showSandboxInfo, setShowSandboxInfo] = useState(false);
   const [showSandboxWarning, setShowSandboxWarning] = useState(false);
+  const [sessionReady, setSessionReady] = useState(false);
+  const [isExtendedBuild, setIsExtendedBuild] = useState(false);
+  const ragInitializedRef = useRef(false);
 
   // Blocky Bits — only polls when visual mode is active
   const blocky = useBlockyBits(inputMode === 'visual' && (phase === 'soul' || phase === 'builder'));
@@ -159,30 +162,33 @@ function App() {
     setSandboxMap(newMap);
   }, [addedSkills]);
 
-  const handleBuild = useCallback(() => {
+  const handleBuild = useCallback(async () => {
     if (addedSkills.length > 0 && selectedModel) {
+      const hasRAG = addedSkills.some(s => s.id === 'rag');
+      const isFirstRAG = hasRAG && !ragInitializedRef.current;
+
+      setSessionReady(false);
+      setIsExtendedBuild(isFirstRAG);
       setPhase('building');
-    }
-  }, [addedSkills.length, selectedModel]);
 
-  const handleBuildComplete = useCallback(async () => {
-    if (!selectedModel) {
-      console.error('[App] No model selected');
-      return;
+      try {
+        const skillIds = addedSkills.map(s => s.id);
+        console.log('[App] Creating agent session:', selectedModel.id, skillIds, 'sandboxMap:', sandboxMap);
+        const id = await createAgentSession(selectedModel.id, skillIds, true, sandboxMap);
+        console.log('[App] Session created:', id);
+        setSessionId(id);
+        if (hasRAG) ragInitializedRef.current = true;
+        setSessionReady(true);
+      } catch (err) {
+        console.error('[App] Failed to create agent session:', err);
+        setSessionReady(true); // Let animation finish even on error
+      }
     }
+  }, [addedSkills, selectedModel, sandboxMap]);
 
-    try {
-      const skillIds = addedSkills.map(s => s.id);
-      console.log('[App] Creating agent session:', selectedModel.id, skillIds, 'sandboxMap:', sandboxMap);
-      const id = await createAgentSession(selectedModel.id, skillIds, true, sandboxMap);
-      console.log('[App] Session created:', id);
-      setSessionId(id);
-      setPhase('chat');
-    } catch (err) {
-      console.error('[App] Failed to create agent session:', err);
-      setPhase('chat');
-    }
-  }, [selectedModel, addedSkills, sandboxMap]);
+  const handleBuildComplete = useCallback(() => {
+    setPhase('chat');
+  }, []);
 
   const handleReset = useCallback(() => {
     if (sessionId) {
@@ -345,9 +351,11 @@ function App() {
         </div>
 
         {/* Build animation overlay */}
-        <BuildAnimation 
+        <BuildAnimation
           isActive={phase === 'building'}
           onComplete={handleBuildComplete}
+          sessionReady={sessionReady}
+          extendedBuild={isExtendedBuild}
         />
 
         {/* Sandbox info modal */}

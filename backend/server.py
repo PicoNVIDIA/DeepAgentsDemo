@@ -80,6 +80,7 @@ ICON_MAP = {
     "execute": "💻",
     "write_todos": "📋", "read_todos": "📋",
     "task": "🤖",
+    "it_knowledge_base": "📚",
 }
 
 SKILL_ID_MAP = {
@@ -89,6 +90,7 @@ SKILL_ID_MAP = {
     "execute": "execute",
     "write_todos": "planning", "read_todos": "planning",
     "task": "task",
+    "it_knowledge_base": "rag",
 }
 
 

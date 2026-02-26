@@ -83,7 +83,7 @@ export const models: ModelDef[] = [
     glowColor: 'rgba(118, 185, 0, 0.4)',
     subtleColor: 'rgba(118, 185, 0, 0.1)',
     backendModel: 'nvidia/llama-3.3-nemotron-super-49b-v1.5',
-    recommendedSkills: ['websearch', 'superpowers'],
+    recommendedSkills: ['websearch', 'superpowers', 'rag'],
   },
   {
     id: 'llama',
@@ -96,7 +96,7 @@ export const models: ModelDef[] = [
     glowColor: 'rgba(6, 104, 225, 0.4)',
     subtleColor: 'rgba(6, 104, 225, 0.1)',
     backendModel: 'meta/llama-3.3-70b-instruct',
-    recommendedSkills: ['websearch', 'superpowers'],
+    recommendedSkills: ['websearch', 'superpowers', 'rag'],
   },
   {
     id: 'deepseek',

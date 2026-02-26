@@ -5,6 +5,8 @@ sse-starlette
 tavily-python
 langchain-nvidia-ai-endpoints
 langchain-community
+langchain
+faiss-cpu
 python-dotenv
 # Sandbox support (Docker-based)
 docker

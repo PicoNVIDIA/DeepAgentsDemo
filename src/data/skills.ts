@@ -77,11 +77,19 @@ export const skills: Skill[] = [
     sampleQuestions: ['Review this code: def add(a,b): return a+b', 'Review this code def is_even(n): return n % 2'],
     sandboxable: false,
   },
+  {
+    id: 'rag',
+    name: 'RAG',
+    description: 'Search IT knowledge base with retrieval-augmented generation',
+    category: 'tools',
+    icon: '📚',
+    sampleQuestions: ['How do I reset my company password?', 'How do I request a virtual desktop machine?'],
+    sandboxable: false,
+  },
 ];
 
 // Coming soon — will be wired to real backends (MCP, skills, etc.)
 export const comingSoonSkills: Array<{ name: string; icon: string; description: string }> = [
-  { name: 'RAG', icon: '📚', description: 'Retrieval-augmented generation' },
   { name: 'API Access', icon: '🔌', description: 'Connect to external services' },
   { name: 'Database', icon: '🗄️', description: 'Query structured data' },
   { name: 'Vision', icon: '👁️', description: 'Image understanding' },

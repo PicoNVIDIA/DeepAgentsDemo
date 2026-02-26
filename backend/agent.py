@@ -75,6 +75,16 @@ def _build_extra_tools(skill_ids: list[str]) -> list:
         except ImportError:
             print("[Agent] Tavily not available")
 
+    if "rag" in skill_ids:
+        try:
+            from rag import get_retriever_tool
+            tool = get_retriever_tool()
+            if tool:
+                tools.append(tool)
+                print("[Agent] Added IT knowledge base RAG tool")
+        except Exception as e:
+            print(f"[Agent] RAG tool not available: {e}")
+
     return tools
 
 
@@ -124,10 +134,16 @@ def _build_system_prompt(skill_ids: list[str], model_id: str, hitl_enabled: bool
         enabled.append("- Shell Execution (execute): run shell commands, Python scripts, and system tools")
     if "superpowers" in skill_ids:
         enabled.append("- Superpowers: agentic software development methodology (TDD, planning, debugging)")
+    if "rag" in skill_ids:
+        enabled.append("- IT Knowledge Base (it_knowledge_base): search internal IT policies and procedures")
 
     builtin = ["- Planning (write_todos): organize tasks"]
     all_capabilities = enabled + builtin if enabled else builtin
     caps_text = "\n".join(all_capabilities)
+
+    rag_rule = ""
+    if "rag" in skill_ids:
+        rag_rule = "\n6. When the user asks about IT policies, procedures, passwords, virtual desktops, VPN, software installation, hardware, or any internal company IT questions, ALWAYS use the it_knowledge_base tool to search the knowledge base. Do NOT use file tools (ls, grep, etc.) for IT-related questions."
 
     hitl_note = ""
     if hitl_enabled:
@@ -152,7 +168,7 @@ CRITICAL RULES:
    Always use paths like: {workspace}/hello.py
 3. Use web search when the user asks for current information.
 4. Be concise and technically accurate.
-5. You are running on NVIDIA infrastructure.
+5. You are running on NVIDIA infrastructure.{rag_rule}
 {hitl_note}{skill_section}"""
 
 
